@@ -42,4 +42,4 @@ config = prompt_for_config(prompts: prompts)
 
 puts config
 
-backup_convox_config
+backup_convox_config!

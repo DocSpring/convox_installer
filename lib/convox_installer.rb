@@ -21,7 +21,7 @@ module ConvoxInstaller
     @config.config
   end
 
-  def backup_convox_config
-    client.backup_convox_config
+  def backup_convox_config!
+    client.backup_convox_config!
   end
 end
