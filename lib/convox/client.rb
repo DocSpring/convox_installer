@@ -1,15 +1,31 @@
 # frozen_string_literal: true
 
-require 'json'
+require "json"
+require "fileutils"
 
 module Convox
   class Client
-    AUTH_FILE = '~/.convox/auth'
+    CONVOX_DIR = File.expand_path("~/.convox").freeze
+    AUTH_FILE = File.join(CONVOX_DIR, "auth")
 
-    attr_accessor :auth
+    attr_accessor :logger, :auth
 
-    def initialize
+    def initialize(options = {})
+      @logger = Logger.new(STDOUT)
+      logger.level = options[:log_level] || Logger::INFO
+
       load_auth
+    end
+
+    def backup_convox_config
+      %w[host rack].each do |f|
+        path = File.join(CONVOX_DIR, f)
+        if File.exists?(path)
+          bak_file = "#{path}.bak"
+          logger.info "Moving existing #{path} to #{bak_file}..."
+          FileUtils.mv(path, bak_file)
+        end
+      end
     end
 
     private

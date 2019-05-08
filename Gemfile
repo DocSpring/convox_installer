@@ -1,14 +1,15 @@
 # frozen_string_literal: true
 
 source 'https://rubygems.org'
-ruby '2.5.3'
 
-gem 'httparty'
-gem 'os'
+gemspec
 
 group :test do
-  gem 'rubocop'
+  gem 'pry'
+  gem 'pry-byebug'
   gem 'rspec'
+  gem 'rubocop'
+  gem 'rubocop-rspec'
   gem 'vcr'
   gem 'webmock'
 end

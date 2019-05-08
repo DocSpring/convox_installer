@@ -20,6 +20,7 @@ $LOAD_PATH << File.expand_path(__dir__, '../lib')
 
 require 'vcr'
 require 'webmock/rspec'
+require 'pry-byebug'
 
 VCR.configure do |config|
   config.cassette_library_dir = 'spec/vcr_cassettes'
