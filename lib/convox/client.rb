@@ -223,7 +223,7 @@ module Convox
 
         retries = 0
         loop do
-          return if s3_bucket_exists?
+          break if s3_bucket_exists?
 
           if retries > 10
             raise "Something went wrong while creating the #{bucket_name} S3 bucket! " \
