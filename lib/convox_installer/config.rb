@@ -34,6 +34,11 @@ module ConvoxInstaller
         key: :aws_secret_access_key,
         title: "AWS Secret Access Key",
       },
+      {
+        key: :instance_type,
+        title: "EC2 Instance Type",
+        default: "t3.medium",
+      },
     ].freeze
 
     def initialize(options = {})

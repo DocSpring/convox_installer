@@ -40,11 +40,11 @@ RSpec.describe ConvoxInstaller::Config do
     output = StringIO.new
     highline = HighLine.new(input, output)
 
-    input << "\nus-north-12\nasdf\nxkcd\nn\nformapi-test\n\nsdfg\n\ny\n"
+    input << "\nus-north-12\nasdf\nxkcd\n\nn\nformapi-test\n\nsdfg\n\n\ny\n"
     input.rewind
 
     config = described_class.new(highline: highline)
-    expect(config).to receive(:save_config_to_file).exactly(8).times
+    expect(config).to receive(:save_config_to_file).exactly(10).times
 
     expect(config.config).to eq({})
     config.prompt_for_config
@@ -53,6 +53,7 @@ RSpec.describe ConvoxInstaller::Config do
       :aws_access_key_id => "sdfg",
       :aws_region => "us-north-12",
       :aws_secret_access_key => "xkcd",
+      :instance_type => "t3.medium",
     )
     output.rewind
     stripped_output = output.read.lines.map(&:rstrip).join("\n")
@@ -62,7 +63,7 @@ Please enter your AWS Region: |us-east-1|
 Admin AWS Credentials
 ============================================
 
-Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key:
+Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key: Please enter your EC2 Instance Type: |t3.medium|
 ============================================
                  SUMMARY
 ============================================
@@ -71,6 +72,7 @@ Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key:
     AWS Region:              us-north-12
     AWS Access Key ID:       asdf
     AWS Secret Access Key:   xkcd
+    EC2 Instance Type:       t3.medium
 
 We've saved your configuration to: /Users/ndbroadbent/.convox/installer_config
 If anything goes wrong during the installation, you can restart the script to reload the config and continue.
@@ -83,7 +85,7 @@ Please enter your AWS Region: |us-north-12|
 Admin AWS Credentials
 ============================================
 
-Please enter your AWS Access Key ID: |asdf| Please enter your AWS Secret Access Key: |xkcd|
+Please enter your AWS Access Key ID: |asdf| Please enter your AWS Secret Access Key: |xkcd| Please enter your EC2 Instance Type: |t3.medium|
 ============================================
                  SUMMARY
 ============================================
@@ -92,6 +94,7 @@ Please enter your AWS Access Key ID: |asdf| Please enter your AWS Secret Access 
     AWS Region:              us-north-12
     AWS Access Key ID:       sdfg
     AWS Secret Access Key:   xkcd
+    EC2 Instance Type:       t3.medium
 
 We've saved your configuration to: /Users/ndbroadbent/.convox/installer_config
 If anything goes wrong during the installation, you can restart the script to reload the config and continue.
@@ -140,11 +143,11 @@ EOS
       },
     ]
 
-    input << "\n\nasdf\nxkcd\nsdfg\nqwer\n\ny\n"
+    input << "\n\nasdf\nxkcd\n\nsdfg\nqwer\n\ny\n"
     input.rewind
 
     config = described_class.new(highline: highline, prompts: custom_prompts)
-    expect(config).to receive(:save_config_to_file).exactly(7).times
+    expect(config).to receive(:save_config_to_file).exactly(8).times
     expect(SecureRandom).to receive(:hex).with(8).and_return("99a6f67de0c7a117")
 
     expect(config.config).to eq({})
@@ -156,6 +159,7 @@ EOS
       :aws_region => "us-east-1",
       :aws_access_key_id => "asdf",
       :aws_secret_access_key => "xkcd",
+      :instance_type => "t3.medium",
       :ecr_access_key_id => "sdfg",
       :ecr_secret_access_key => "qwer",
       :admin_email => "admin@example.com",
@@ -169,7 +173,7 @@ Please enter your AWS Region: |us-east-1|
 Admin AWS Credentials
 ============================================
 
-Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key:
+Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key: Please enter your EC2 Instance Type: |t3.medium|
 ECR Authentication
 ============================================
 
@@ -183,6 +187,7 @@ Please enter your Docker Registry Access Key ID: Please enter your Docker Regist
     AWS Region:                          us-east-1
     AWS Access Key ID:                   asdf
     AWS Secret Access Key:               xkcd
+    EC2 Instance Type:                   t3.medium
     Docker Registry Access Key ID:       sdfg
     Docker Registry Secret Access Key:   qwer
     Admin Email:                         admin@example.com
