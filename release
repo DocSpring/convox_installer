@@ -1,0 +1,4 @@
+#!/bin/bash
+rm -f convox_installer-*.gem
+gem build convox_installer.gemspec
+gem push convox_installer-*.gem

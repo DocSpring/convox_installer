@@ -2,3 +2,4 @@ mkmf.log
 log
 convox.yml
 .convox
+convox_installer-*.gem
