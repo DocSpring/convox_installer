@@ -122,11 +122,11 @@ EOS
         "via email. If not, please contact support@example.com",
       },
       {
-        key: :ecr_access_key_id,
+        key: :docker_registry_username,
         title: "Docker Registry Access Key ID",
       },
       {
-        key: :ecr_secret_access_key,
+        key: :docker_registry_password,
         title: "Docker Registry Secret Access Key",
       },
       {
@@ -139,7 +139,7 @@ EOS
       {
         key: :admin_password,
         title: "Admin Password",
-        force_default: -> () { SecureRandom.hex(8) },
+        value: -> () { SecureRandom.hex(8) },
       },
     ]
 
@@ -160,8 +160,8 @@ EOS
       :aws_access_key_id => "asdf",
       :aws_secret_access_key => "xkcd",
       :instance_type => "t3.medium",
-      :ecr_access_key_id => "sdfg",
-      :ecr_secret_access_key => "qwer",
+      :docker_registry_username => "sdfg",
+      :docker_registry_password => "qwer",
       :admin_email => "admin@example.com",
       :admin_password => "99a6f67de0c7a117",
     )

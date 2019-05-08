@@ -24,6 +24,11 @@ module ConvoxInstaller
         default: "us-east-1",
       },
       {
+        key: :instance_type,
+        title: "EC2 Instance Type",
+        default: "t3.medium",
+      },
+      {
         section: "Admin AWS Credentials",
       },
       {
@@ -33,11 +38,6 @@ module ConvoxInstaller
       {
         key: :aws_secret_access_key,
         title: "AWS Secret Access Key",
-      },
-      {
-        key: :instance_type,
-        title: "EC2 Instance Type",
-        default: "t3.medium",
       },
     ].freeze
 
@@ -98,7 +98,7 @@ module ConvoxInstaller
       max = config_titles.map(&:length).max
 
       prompts.each do |prompt|
-        next unless prompt[:key]
+        next if !prompt[:key] || prompt[:hidden]
 
         value = config[prompt[:key]]
         title = prompt[:title] || prompt[:key]
@@ -125,11 +125,12 @@ module ConvoxInstaller
 
       # Used when we want to force a default value and not prompt the user.
       # (e.g. securely generated passwords)
-      if prompt[:force_default]
+      if prompt[:value]
         return if config[key]
 
-        default = prompt[:force_default]
+        default = prompt[:value]
         config[key] = default.is_a?(Proc) ? default.call : default
+        save_config_to_file
         return
       end
 

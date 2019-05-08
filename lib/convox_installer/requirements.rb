@@ -14,7 +14,7 @@ module ConvoxInstaller
       logger.level = options[:log_level] || Logger::INFO
     end
 
-    def ensure_requirements
+    def ensure_requirements!
       logger.debug "Checking for required commands..."
 
       @missing_packages = []

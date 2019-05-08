@@ -55,8 +55,8 @@ RSpec.describe Convox::Client do
       )
 
       expect(client.logger).to receive(:info)
-      expect(client).to receive(:run_command).with(
-        "convox rack install aws --name \"asdf\" \"InstanceType=t3.medium\" " \
+      expect(client).to receive(:run_convox_command!).with(
+        "rack install aws --name \"asdf\" \"InstanceType=t3.medium\" " \
         "\"BuildInstance=\"",
         "AWS_ACCESS_KEY_ID" => "asdf",
         "AWS_REGION" => "us-east-1",

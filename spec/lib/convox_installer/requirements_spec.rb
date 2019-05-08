@@ -12,7 +12,7 @@ RSpec.describe ConvoxInstaller::Requirements do
 
       expect(req.logger).to_not receive(:error)
 
-      req.ensure_requirements
+      req.ensure_requirements!
     end
   end
 
@@ -33,7 +33,7 @@ RSpec.describe ConvoxInstaller::Requirements do
           "Please run: brew install convox awscli"
         )
 
-        req.ensure_requirements
+        req.ensure_requirements!
       end
     end
 
@@ -53,7 +53,7 @@ RSpec.describe ConvoxInstaller::Requirements do
           "Please run: brew install convox"
         )
 
-        req.ensure_requirements
+        req.ensure_requirements!
       end
     end
   end
@@ -80,7 +80,7 @@ RSpec.describe ConvoxInstaller::Requirements do
           "userguide/cli-chap-install.html"
         )
 
-        req.ensure_requirements
+        req.ensure_requirements!
       end
     end
   end
