@@ -16,7 +16,7 @@ module ConvoxInstaller
         key: :stack_name,
         title: "Convox Stack Name",
         prompt: "Please enter a name for your Convox installation",
-        default: "formapi-enterprise",
+        default: "convox",
       },
       {
         key: :aws_region,

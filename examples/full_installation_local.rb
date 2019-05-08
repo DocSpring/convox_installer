@@ -8,9 +8,7 @@ include ConvoxInstaller
 
 @log_level = Logger::DEBUG
 
-ensure_requirements!
-
-prompts = ConvoxInstaller::Config::DEFAULT_PROMPTS + [
+@prompts = ConvoxInstaller::Config::DEFAULT_PROMPTS + [
   {
     section: "ECR Authentication",
     info: "You should have received authentication details for the Docker Registry\n" \
@@ -38,8 +36,10 @@ prompts = ConvoxInstaller::Config::DEFAULT_PROMPTS + [
   },
 ]
 
-config = prompt_for_config(prompts: prompts)
+ensure_requirements
+prompt_for_config
 
-puts config
+# backup_convox_host_and_rack
+# install_convox
 
-backup_convox_config!
+check_convox_auth

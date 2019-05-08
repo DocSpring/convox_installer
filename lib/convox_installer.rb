@@ -7,21 +7,32 @@ require "convox_installer/requirements"
 
 module ConvoxInstaller
   def client
-    @client ||= Convox::Client.new(log_level: @log_level)
+    @client ||= Convox::Client.new(log_level: @log_level, config: config.config)
   end
 
-  def ensure_requirements!
-    @requirements = Requirements.new(log_level: @log_level)
-    @requirements.ensure_requirements!
+  def config
+    options = {log_level: @log_level}
+    options[:prompts] = @prompts if @prompts
+    @config ||= Config.new(options)
   end
 
-  def prompt_for_config(options = {})
-    @config = Config.new({log_level: @log_level}.merge(options))
-    @config.prompt_for_config
-    @config.config
+  def requirements
+    @requirements ||= Requirements.new(log_level: @log_level)
   end
 
-  def backup_convox_config!
-    client.backup_convox_config!
+  def ensure_requirements
+    requirements.ensure_requirements
+  end
+
+  def prompt_for_config
+    config.prompt_for_config
+  end
+
+  def backup_convox_host_and_rack
+    client.backup_convox_host_and_rack
+  end
+
+  def install_convox
+    client.install
   end
 end

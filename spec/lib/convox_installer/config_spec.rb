@@ -40,7 +40,7 @@ RSpec.describe ConvoxInstaller::Config do
     output = StringIO.new
     highline = HighLine.new(input, output)
 
-    input << "\nus-north-12\nasdf\nxkcd\n\nn\nformapi-test\n\nsdfg\n\n\ny\n"
+    input << "\nus-north-12\nasdf\nxkcd\n\nn\nconvox-test\n\nsdfg\n\n\ny\n"
     input.rewind
 
     config = described_class.new(highline: highline)
@@ -49,7 +49,7 @@ RSpec.describe ConvoxInstaller::Config do
     expect(config.config).to eq({})
     config.prompt_for_config
     expect(config.config).to eq(
-      :stack_name => "formapi-test",
+      :stack_name => "convox-test",
       :aws_access_key_id => "sdfg",
       :aws_region => "us-north-12",
       :aws_secret_access_key => "xkcd",
@@ -58,7 +58,7 @@ RSpec.describe ConvoxInstaller::Config do
     output.rewind
     stripped_output = output.read.lines.map(&:rstrip).join("\n")
     expected_output = <<-EOS
-Please enter a name for your Convox installation  |formapi-enterprise|
+Please enter a name for your Convox installation  |convox|
 Please enter your AWS Region: |us-east-1|
 Admin AWS Credentials
 ============================================
@@ -68,7 +68,7 @@ Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key: Pl
                  SUMMARY
 ============================================
 
-    Convox Stack Name:       formapi-enterprise
+    Convox Stack Name:       convox
     AWS Region:              us-north-12
     AWS Access Key ID:       asdf
     AWS Secret Access Key:   xkcd
@@ -80,7 +80,7 @@ If anything goes wrong during the installation, you can restart the script to re
 Please double check all of these configuration details.
 Would you like to start the Convox installation? (press 'n' to correct any settings)
 
-Please enter a name for your Convox installation  |formapi-enterprise|
+Please enter a name for your Convox installation  |convox|
 Please enter your AWS Region: |us-north-12|
 Admin AWS Credentials
 ============================================
@@ -90,7 +90,7 @@ Please enter your AWS Access Key ID: |asdf| Please enter your AWS Secret Access 
                  SUMMARY
 ============================================
 
-    Convox Stack Name:       formapi-test
+    Convox Stack Name:       convox-test
     AWS Region:              us-north-12
     AWS Access Key ID:       sdfg
     AWS Secret Access Key:   xkcd
@@ -155,7 +155,7 @@ EOS
     config.prompt_for_config
 
     expect(config.config).to eq(
-      :stack_name => "formapi-enterprise",
+      :stack_name => "convox",
       :aws_region => "us-east-1",
       :aws_access_key_id => "asdf",
       :aws_secret_access_key => "xkcd",
@@ -168,7 +168,7 @@ EOS
     output.rewind
     stripped_output = output.read.lines.map(&:rstrip).join("\n")
     expected_output = <<-EOS
-Please enter a name for your Convox installation  |formapi-enterprise|
+Please enter a name for your Convox installation  |convox|
 Please enter your AWS Region: |us-east-1|
 Admin AWS Credentials
 ============================================
@@ -183,7 +183,7 @@ Please enter your Docker Registry Access Key ID: Please enter your Docker Regist
                  SUMMARY
 ============================================
 
-    Convox Stack Name:                   formapi-enterprise
+    Convox Stack Name:                   convox
     AWS Region:                          us-east-1
     AWS Access Key ID:                   asdf
     AWS Secret Access Key:               xkcd

@@ -7,4 +7,4 @@
 #   gem 'convox_installer'
 # end
 
-ConvoxInstaller.ensure_requirements!
+ConvoxInstaller.ensure_requirements
