@@ -35,7 +35,7 @@ JSON
 
 @prompts = ConvoxInstaller::Config::DEFAULT_PROMPTS + [
   {
-    section: "ECR Authentication",
+    section: "Docker Registry Authentication",
     info: "You should have received authentication details for the Docker Registry\n" \
     "via email. If not, please contact support@example.com",
   },

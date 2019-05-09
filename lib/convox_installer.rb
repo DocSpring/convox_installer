@@ -34,13 +34,13 @@ module ConvoxInstaller
     install_convox
     validate_convox_auth_and_set_host!
     validate_convox_rack!
+    convox_rack_data
     create_convox_app!
     set_default_app_for_directory!
     create_s3_bucket!
     set_s3_bucket_cors_policy
-    add_docker_registry!
     s3_bucket_details
-    convox_rack_data
+    add_docker_registry!
     default_service_domain_name
     run_convox_command!
   ].each do |method|
