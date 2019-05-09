@@ -6,7 +6,7 @@ A Ruby gem that makes it easier to build a Convox installation script. This is l
 
 I put this together in a few days, so it doesn't have great test coverage. However, I've set up a number of test and production deployments using my installation script, and everything seems to work quite well.
 
-### Features
+## Features
 
 * Idempotent. If this script crashes, you can restart it and it will pick up
   where it left off. Every step looks up the existing state, and only makes a change
@@ -16,7 +16,7 @@ I put this together in a few days, so it doesn't have great test coverage. Howev
 * Add an Docker Repository (e.g. ECR registry)
 * Set up an S3 bucket with a CORS policy
 
-### Introduction
+## Introduction
 
 [Convox](https://convox.com/) is an awesome open source PaaS, which is like Heroku for your own AWS account. [`convox/rack`](https://github.com/convox/rack) is completely open source and free to use, but you can also sign up for a free or paid account to use the hosted service on convox.com.
 
@@ -24,7 +24,7 @@ I put this together in a few days, so it doesn't have great test coverage. Howev
 
 I've rewritten this installation script in Ruby, which provides very good cross-platform support, and also allows me to write tests.
 
-# Usage
+## Usage
 
 Create a new Ruby file (e.g. `install.rb`), and use `bundler/inline` to install and require the `convox_installer` gem. Your install script should start like this:
 
@@ -48,12 +48,12 @@ You should create a new git repo for your own installation script, and then use 
 You can see a complete example in [`examples/full_installation.rb`](./examples/full_installation.rb).
 
 
-# Config
+## Config
 
 Config is loaded from ENV vars, or from saved JSON data at
 `~/.convox/installer_config`. The script will save all of the user's responses into `~/.convox/installer_config`.
 
-# Customize the Config Prompts
+## Customize the Config Prompts
 
 You can set your own config prompts in your own installation script, by setting a `@prompts` instance variable. You can extend the default config prompts like this:
 
@@ -129,53 +129,53 @@ Shows a heading and optional details.
 ```
 
 
-# `ConvoxInstaller` DSL
+## `ConvoxInstaller` DSL
 
-### `ensure_requirements!`
+#### `ensure_requirements!`
 
 Makes sure that the `convox` and `aws` CLI tools are installed on this system. If not, shows installation instructions and exits.
 
-### `prompt_for_config`
+#### `prompt_for_config`
 
 Loads config from ENV vars, or from saved config at `~/.convox/installer_config`.
 If any config settings are missing, it prompts the user for input. Finally, it shows a summary of the config, and asks the user if they want to proceed with the installation. If the user enters `y` (or `yes`), the `prompt_for_config` method completes. If they enter `n` (or `no`), we loop over every setting and let them press "enter" to keep the current value, or provide a new value to correct any mistakes.
 
-### `backup_convox_host_and_rack`
+#### `backup_convox_host_and_rack`
 
 If there are any existing files at `~/.convox/host` or `~/.convox/rack`, this method moves these to `~/.convox/host.bak` and `~/.convox/rack.bak`.
 
-### `install_convox`
+#### `install_convox`
 
 * **Required Config:** `aws_region`, `aws_access_key_id`, `aws_secret_access_key`,
   `stack_name`, `instance_type`
 
 Runs `convox rack install ...`. Has some validations to ensure that all required settings are present.
 
-### `validate_convox_auth_and_set_host!`
+#### `validate_convox_auth_and_set_host!`
 
 After running `install_convox`, call this method to ensure that the the `~/.convox/auth` file has been updated with the correct details (checks the rack name and AWS region.) Then it sets the rack host in `~/.convox/host` (if not already set.)
 
-### `validate_convox_rack!`
+#### `validate_convox_rack!`
 
 Calls `convox api get /system` to get the Rack details, then makes sure that everything is correct.
 
-### `convox_rack_data`
+#### `convox_rack_data`
 
 Returns a Ruby hash with all convox rack data.
 
-### `create_convox_app!`
+#### `create_convox_app!`
 
 * **Required Config:** `convox_app_name`
 
 Checks if the app already exists. If not, calls `convox apps create ... --wait` to create a new app. Then waits for the app to be ready. (Avoids an occasional race condition.)
 
 
-### `set_default_app_for_directory!`
+#### `set_default_app_for_directory!`
 
 Writes the app name into `./.convox/app` (in the current directory.) The `convox` CLI reads this file, so you don't need to specify the `--app` flag for future commands.
 
 
-### `create_s3_bucket!`
+#### `create_s3_bucket!`
 
 * **Required Config:** `s3_bucket_name`
 
@@ -193,7 +193,7 @@ The `:value` `Proc` will generate a bucket name with a random suffix. (Avoids co
 
 `create_s3_bucket!` will also call `set_s3_bucket_cors_policy` automatically, so you don't need to call this manually.
 
-### `set_s3_bucket_cors_policy`
+#### `set_s3_bucket_cors_policy`
 
 * **Required Config:** `s3_bucket_name`
 
@@ -227,7 +227,7 @@ JSON
 ```
 
 
-### `s3_bucket_details`
+#### `s3_bucket_details`
 
 * **Required Config:** `s3_bucket_name`
 
@@ -244,13 +244,13 @@ Get the S3 bucket details for `s3_bucket_name`. Parses the URL and returns a has
 I use these S3 bucket details to set env variables for my app. (`convox env set ...`)
 
 
-### `add_docker_registry!`
+#### `add_docker_registry!`
 
 * **Required Config:** `docker_registry_url`, `docker_registry_username`, `docker_registry_password`
 
 Checks the list of registries to see if `docker_registry_url` has already been added. If not, runs `convox registries add ...` to add a new Docker registry (e.g. Docker Hub, ECR).
 
-### `default_service_domain_name`
+#### `default_service_domain_name`
 
 * **Required Config:** `convox_app_name`, `default_service`
 
@@ -274,7 +274,7 @@ Set a default service in your config prompts (e.g. `web`):
 
 > (This hidden setting isn't visible to the user.)
 
-### `run_convox_command!(cmd)`
+#### `run_convox_command!(cmd)`
 
 Runs a `convox` CLI command, and shows all output in the terminal. Crashes the script with an error if the `convox` command has a non-zero exit code.
 
@@ -285,6 +285,6 @@ run_convox_command! 'env set MYVAR=value'
 ```
 
 
-### License
+## License
 
 [MIT](./LICENSE)
