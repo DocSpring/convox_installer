@@ -40,7 +40,21 @@ RSpec.describe ConvoxInstaller::Config do
     output = StringIO.new
     highline = HighLine.new(input, output)
 
-    input << "\nus-north-12\nasdf\nxkcd\n\nn\nconvox-test\n\nsdfg\n\n\ny\n"
+    input_details = [
+      [:stack_name, ""],
+      [:aws_region, ""],
+      [:instance_type, "c5.xlarge"],
+      [:aws_access_key_id, "asdf"],
+      [:aws_secret_access_key, "xkcd"],
+      [:confirm?, "n"],
+      [:stack_name, "convox-test"],
+      [:aws_region, "us-north-12"],
+      [:instance_type, "t3.medium"],
+      [:aws_access_key_id, "sdfg"],
+      [:aws_secret_access_key, ""],
+      [:confirm?, "y"],
+    ]
+    input << input_details.map(&:last).join("\n") << "\n"
     input.rewind
 
     config = described_class.new(highline: highline)
@@ -50,8 +64,8 @@ RSpec.describe ConvoxInstaller::Config do
     config.prompt_for_config
     expect(config.config).to eq(
       :stack_name => "convox-test",
-      :aws_access_key_id => "sdfg",
       :aws_region => "us-north-12",
+      :aws_access_key_id => "sdfg",
       :aws_secret_access_key => "xkcd",
       :instance_type => "t3.medium",
     )
@@ -59,20 +73,20 @@ RSpec.describe ConvoxInstaller::Config do
     stripped_output = output.read.lines.map(&:rstrip).join("\n")
     expected_output = <<-EOS
 Please enter a name for your Convox installation  |convox|
-Please enter your AWS Region: |us-east-1|
+Please enter your AWS Region: |us-east-1| Please enter your EC2 Instance Type: |t3.medium|
 Admin AWS Credentials
 ============================================
 
-Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key: Please enter your EC2 Instance Type: |t3.medium|
+Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key:
 ============================================
                  SUMMARY
 ============================================
 
     Convox Stack Name:       convox
-    AWS Region:              us-north-12
+    AWS Region:              us-east-1
+    EC2 Instance Type:       c5.xlarge
     AWS Access Key ID:       asdf
     AWS Secret Access Key:   xkcd
-    EC2 Instance Type:       t3.medium
 
 We've saved your configuration to: /Users/ndbroadbent/.convox/installer_config
 If anything goes wrong during the installation, you can restart the script to reload the config and continue.
@@ -81,20 +95,20 @@ Please double check all of these configuration details.
 Would you like to start the Convox installation? (press 'n' to correct any settings)
 
 Please enter a name for your Convox installation  |convox|
-Please enter your AWS Region: |us-north-12|
+Please enter your AWS Region: |us-east-1| Please enter your EC2 Instance Type: |c5.xlarge|
 Admin AWS Credentials
 ============================================
 
-Please enter your AWS Access Key ID: |asdf| Please enter your AWS Secret Access Key: |xkcd| Please enter your EC2 Instance Type: |t3.medium|
+Please enter your AWS Access Key ID: |asdf| Please enter your AWS Secret Access Key: |xkcd|
 ============================================
                  SUMMARY
 ============================================
 
     Convox Stack Name:       convox-test
     AWS Region:              us-north-12
+    EC2 Instance Type:       t3.medium
     AWS Access Key ID:       sdfg
     AWS Secret Access Key:   xkcd
-    EC2 Instance Type:       t3.medium
 
 We've saved your configuration to: /Users/ndbroadbent/.convox/installer_config
 If anything goes wrong during the installation, you can restart the script to reload the config and continue.
@@ -143,11 +157,22 @@ EOS
       },
     ]
 
-    input << "\n\nasdf\nxkcd\n\nsdfg\nqwer\n\ny\n"
+    input_details = [
+      [:stack_name, ""],
+      [:aws_region, ""],
+      [:instance_type, "c5.xlarge"],
+      [:aws_access_key_id, "asdf"],
+      [:aws_secret_access_key, "xkcd"],
+      [:docker_registry_username, "bob"],
+      [:docker_registry_password, "password1"],
+      [:admin_email, "admin@test.com"],
+      [:confirm?, "y"],
+    ]
+    input << input_details.map(&:last).join("\n") << "\n"
     input.rewind
 
     config = described_class.new(highline: highline, prompts: custom_prompts)
-    expect(config).to receive(:save_config_to_file).exactly(8).times
+    expect(config).to receive(:save_config_to_file).exactly(9).times
     expect(SecureRandom).to receive(:hex).with(8).and_return("99a6f67de0c7a117")
 
     expect(config.config).to eq({})
@@ -159,21 +184,21 @@ EOS
       :aws_region => "us-east-1",
       :aws_access_key_id => "asdf",
       :aws_secret_access_key => "xkcd",
-      :instance_type => "t3.medium",
-      :docker_registry_username => "sdfg",
-      :docker_registry_password => "qwer",
-      :admin_email => "admin@example.com",
+      :instance_type => "c5.xlarge",
+      :docker_registry_username => "bob",
+      :docker_registry_password => "password1",
+      :admin_email => "admin@test.com",
       :admin_password => "99a6f67de0c7a117",
     )
     output.rewind
     stripped_output = output.read.lines.map(&:rstrip).join("\n")
     expected_output = <<-EOS
 Please enter a name for your Convox installation  |convox|
-Please enter your AWS Region: |us-east-1|
+Please enter your AWS Region: |us-east-1| Please enter your EC2 Instance Type: |t3.medium|
 Admin AWS Credentials
 ============================================
 
-Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key: Please enter your EC2 Instance Type: |t3.medium|
+Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key:
 ECR Authentication
 ============================================
 
@@ -185,12 +210,12 @@ Please enter your Docker Registry Access Key ID: Please enter your Docker Regist
 
     Convox Stack Name:                   convox
     AWS Region:                          us-east-1
+    EC2 Instance Type:                   c5.xlarge
     AWS Access Key ID:                   asdf
     AWS Secret Access Key:               xkcd
-    EC2 Instance Type:                   t3.medium
-    Docker Registry Access Key ID:       sdfg
-    Docker Registry Secret Access Key:   qwer
-    Admin Email:                         admin@example.com
+    Docker Registry Access Key ID:       bob
+    Docker Registry Secret Access Key:   password1
+    Admin Email:                         admin@test.com
     Admin Password:                      99a6f67de0c7a117
 
 We've saved your configuration to: /Users/ndbroadbent/.convox/installer_config

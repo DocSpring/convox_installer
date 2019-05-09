@@ -39,8 +39,8 @@ RSpec.describe Convox::Client do
       client = described_class.new
       expect { client.install_convox }.to raise_error("aws_region is missing from the config!")
 
-      client = described_class.new(config: {aws_region: "asdf"})
-      expect { client.install_convox }.to raise_error("aws_access_key_id is missing from the config!")
+      client = described_class.new(config: {aws_region: "us-east-1"})
+      expect { client.install_convox }.to raise_error("stack_name is missing from the config!")
     end
 
     it "should run the correct convox CLI command" do
