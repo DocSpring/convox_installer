@@ -13,8 +13,8 @@ I put this together in a few days, so it doesn't have great test coverage. Howev
   if things are not yet set up (or out of sync).
 * Ensures that the `convox` and `aws` CLI tools are installed
 * Wraps the `convox` CLI and parses JSON output from API calls
-* Add an Docker Repository (e.g. ECR registry)
-* Set up an S3 bucket with a CORS policy
+* Add n Docker Repository (e.g. ECR registry)
+* Set up an S3 bucket with an optional CORS policy
 
 ## Introduction
 
