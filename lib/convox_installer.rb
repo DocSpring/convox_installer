@@ -43,6 +43,7 @@ module ConvoxInstaller
     add_docker_registry!
     default_service_domain_name
     run_convox_command!
+    logger
   ].each do |method|
     define_method(method) do |*args|
       client.send(method, *args)
