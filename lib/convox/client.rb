@@ -390,7 +390,11 @@ module Convox
     def load_auth_from_file
       return {} unless File.exist?(AUTH_FILE)
 
-      JSON.parse(File.read(AUTH_FILE))
+      begin
+        JSON.parse(File.read(AUTH_FILE))
+      rescue
+        {}
+      end
     end
 
     def require_config(required_keys)
