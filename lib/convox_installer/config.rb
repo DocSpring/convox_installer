@@ -8,7 +8,7 @@ require "securerandom"
 module ConvoxInstaller
   class Config
     CONFIG_FILE = File.expand_path("./.installer_config").freeze
-    
+
     attr_accessor :logger, :config, :prompts, :highline
 
     DEFAULT_PROMPTS = [
@@ -129,7 +129,7 @@ module ConvoxInstaller
         return if config[key]
 
         default = prompt[:value]
-        config[key] = default.is_a?(Proc) ? default.call : default
+        config[key] = default.is_a?(Proc) ? default.call(config) : default
         save_config_to_file
         return
       end
@@ -169,9 +169,9 @@ module ConvoxInstaller
     end
 
     def save_config_to_file
-      FileUtils.mkdir_p File.expand_path("~/.convox")
+      # FileUtils.mkdir_p File.expand_path("~/.convox")
       File.open(CONFIG_FILE, "w") do |f|
-        f.puts({config: config}.to_json)
+        f.puts({ config: config }.to_json)
       end
     end
 
