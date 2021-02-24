@@ -7,7 +7,7 @@ require "securerandom"
 
 module ConvoxInstaller
   class Config
-    CONFIG_FILE = File.expand_path("./.installer_config").freeze
+    CONFIG_FILE = File.expand_path("./.installer_config.json").freeze
 
     attr_accessor :logger, :config, :prompts, :highline
 
@@ -170,8 +170,8 @@ module ConvoxInstaller
 
     def save_config_to_file
       # FileUtils.mkdir_p File.expand_path("~/.convox")
-      File.open(CONFIG_FILE, "w") do |f|
-        f.puts({ config: config }.to_json)
+      File.open(CONFIG_FILE, 'w') do |f|
+        f.puts(JSON.pretty_generate(config: config))
       end
     end
 

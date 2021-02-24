@@ -50,7 +50,7 @@ You can see a complete example in [`examples/full_installation.rb`](./examples/f
 ## Config
 
 Config is loaded from ENV vars, or from saved JSON data at
-`./.installer_config`. The script will save all of the user's responses into `./.installer_config` (in the current directory).
+`./.installer_config.json`. The script will save all of the user's responses into `./.installer_config.json` (in the current directory).
 
 ## Customize the Config Prompts
 
@@ -135,7 +135,7 @@ Makes sure that the `convox` and `aws` CLI tools are installed on this system. I
 
 #### `prompt_for_config`
 
-Loads config from ENV vars, or from saved config at `./.installer_config`.
+Loads config from ENV vars, or from saved config at `./.installer_config.json`.
 If any config settings are missing, it prompts the user for input. Finally, it shows a summary of the config, and asks the user if they want to proceed with the installation. If the user enters `y` (or `yes`), the `prompt_for_config` method completes. If they enter `n` (or `no`), we loop over every setting and let them press "enter" to keep the current value, or provide a new value to correct any mistakes.
 
 #### `backup_convox_host_and_rack`
