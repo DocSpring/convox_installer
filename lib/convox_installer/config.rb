@@ -154,7 +154,7 @@ module ConvoxInstaller
       logger.debug "Loading saved config from #{CONFIG_FILE}..."
 
       loaded_config = JSON.parse(Config.read_config_file)["config"].symbolize_keys
-      self.config = config.merge(loaded_config).slice(*config_keys)
+      self.config = config.merge(loaded_config)
     end
 
     def load_config_from_env
