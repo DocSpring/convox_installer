@@ -375,7 +375,8 @@ module Convox
         app = config.fetch(:convox_app_name)
         service = config.fetch(:default_service)
 
-        "#{app}-#{service}.#{elb_name_and_region}.convox.site"
+        # Need to return downcase host so that `config.hosts` works with Rails applications
+        "#{app}-#{service}.#{elb_name_and_region}.convox.site".downcase
       end
     end
 

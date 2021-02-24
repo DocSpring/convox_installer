@@ -250,7 +250,7 @@ Checks the list of registries to see if `docker_registry_url` has already been a
 
 Parses the rack router ELB name and region, and returns the default `convox.site` domain for your default service. (You can visit this URL in the browser to access your app.)
 
-Example: `myapp-web.rackname-Route-ABCDFE123456-123456789.us-west-2.convox.site`
+Example: `myapp-web.rackname-route-abcdfe123456-123456789.us-west-2.convox.site`
 
 Set a default service in your config prompts (e.g. `web`):
 
