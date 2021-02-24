@@ -7,9 +7,9 @@ require "securerandom"
 
 module ConvoxInstaller
   class Config
+    CONFIG_FILE = File.expand_path("./.installer_config").freeze
+    
     attr_accessor :logger, :config, :prompts, :highline
-
-    CONFIG_FILE = File.expand_path("~/.convox/installer_config").freeze
 
     DEFAULT_PROMPTS = [
       {

@@ -4,12 +4,16 @@ require "convox_installer"
 require "securerandom"
 
 RSpec.describe ConvoxInstaller::Config do
+  before(:each) do
+    stub_const('ConvoxInstaller::Config::CONFIG_FILE', '/path/to/.installer_config')
+  end
+
   after(:each) do
     ENV.delete "AWS_REGION"
     ENV.delete "AWS_ACCESS_KEY_ID"
   end
 
-  it "loads the saved config from ~/.convox/installer_config" do
+  it "loads the saved config from ./.installer_config" do
     expect(described_class).to receive(:config_file_exists?).and_return(true)
     expect(described_class).to receive(:read_config_file).and_return(
       '{ "config": { "aws_region": "us-west-2", "aws_access_key_id": "1234" } }'
@@ -88,7 +92,7 @@ Please enter your AWS Access Key ID: Please enter your AWS Secret Access Key:
     AWS Access Key ID:       asdf
     AWS Secret Access Key:   xkcd
 
-We've saved your configuration to: /Users/ndbroadbent/.convox/installer_config
+We've saved your configuration to: /path/to/.installer_config
 If anything goes wrong during the installation, you can restart the script to reload the config and continue.
 
 Please double check all of these configuration details.
@@ -110,7 +114,7 @@ Please enter your AWS Access Key ID: |asdf| Please enter your AWS Secret Access 
     AWS Access Key ID:       sdfg
     AWS Secret Access Key:   xkcd
 
-We've saved your configuration to: /Users/ndbroadbent/.convox/installer_config
+We've saved your configuration to: /path/to/.installer_config
 If anything goes wrong during the installation, you can restart the script to reload the config and continue.
 
 Please double check all of these configuration details.
@@ -218,7 +222,7 @@ Please enter your Docker Registry Access Key ID: Please enter your Docker Regist
     Admin Email:                         admin@test.com
     Admin Password:                      99a6f67de0c7a117
 
-We've saved your configuration to: /Users/ndbroadbent/.convox/installer_config
+We've saved your configuration to: /path/to/.installer_config
 If anything goes wrong during the installation, you can restart the script to reload the config and continue.
 
 Please double check all of these configuration details.
