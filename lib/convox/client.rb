@@ -23,6 +23,8 @@ module Convox
     end
 
     def backup_convox_host_and_rack
+      FileUtils.mkdir_p CONVOX_DIR
+
       %w[host rack].each do |f|
         path = File.join(CONVOX_DIR, f)
         if File.exist?(path)
@@ -70,9 +72,7 @@ module Convox
     def rack_already_installed?
       require_config(%i[ aws_region stack_name ])
 
-      unless File.exist?(AUTH_FILE)
-        raise "Could not find auth file at #{AUTH_FILE}!"
-      end
+      return unless File.exist?(AUTH_FILE)
 
       region = config.fetch(:aws_region)
       stack_name = config.fetch(:stack_name)
