@@ -129,7 +129,11 @@ module ConvoxInstaller
         return if config[key]
 
         default = prompt[:value]
-        config[key] = default.is_a?(Proc) ? default.call(config) : default
+        config[key] = if default.is_a?(Proc)
+          default.arity == 0 ? default.call : default.call(config)
+        else
+          default
+        end
         save_config_to_file
         return
       end
