@@ -2,9 +2,12 @@
 
 A Ruby gem that makes it easier to build a Convox installation script. This is like Chef/Ansible/Terraform for your initial Convox setup.
 
-# Requirements: Convox v2
+# Requirements: Convox >= 3
 
-This version of `convox_installer` is only designed to work with Convox v2. Please install the v2 CLI by following the instructions at their old documentation site: https://docsv2.convox.com/introduction/installation
+This version of `convox_installer` is only designed to work with Convox 3 and later. Please install the Convox v3 CLI by following the instructions here: https://docs.convox.com/getting-started/introduction/
+
+*If you want to set up a Convox v2 rack (deprecated), the last version of `convox_installer` that supports the v2 CLI is `1.0.9`. (Take a look at [the `convox2` branch](https://github.com/DocSpring/convox_installer/tree/convox2).)*
+
 ## USE AT YOUR OWN RISK! THIS CODE IS PROVIDED WITHOUT ANY WARRANTIES OR GUARANTEES
 
 We have successfully set up a number of test and production deployments using this gem. Everything seems to work very well. The library also facilitates idempotency and crash-resistance, so you can easily re-run your installation script if something goes wrong. However, if anything goes wrong, then you can end up with a large AWS bill if you're not careful. If anything crashes then make sure you double-check everything in your AWS account and shut down any leftover resources. **USE THIS SOFTWARE AT YOUR OWN RISK.**
