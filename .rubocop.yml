@@ -8,7 +8,7 @@ Style/MixinUsage:
   Exclude:
     - examples/**/*
 
-Metrics/LineLength:
+Layout/LineLength:
   Max: 100
 
 Style/StringLiterals:

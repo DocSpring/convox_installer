@@ -9,6 +9,7 @@ group :test do
   gem 'pry-byebug', require: false
   gem 'rspec'
   gem 'rubocop'
+  gem 'rubocop-daemon'
   gem 'rubocop-rspec'
   gem 'vcr'
   gem 'webmock'

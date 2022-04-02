@@ -49,12 +49,12 @@ module ConvoxInstaller
       end
 
       client = Convox::Client.new
-      return if client.convox_2_cli?
+      return if client.convox_3_cli?
 
-      logger.error 'This script requires Convox CLI version 2.x.x. ' \
+      logger.error 'This script requires Convox CLI version 3.x.x. ' \
                    "Your Convox CLI version is: #{client.cli_version_string}"
-      logger.error 'Please follow the instructions here to downgrade your ' \
-                   'Convox CLI version: https://docsv2.convox.com/introduction/installation'
+      logger.error "Please run 'brew update convox' or follow the instructions " \
+                   'at https://docs.convox.com/getting-started/introduction'
       quit!
     end
 

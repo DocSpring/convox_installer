@@ -3,7 +3,7 @@
 require 'convox_installer'
 
 RSpec.describe ConvoxInstaller::Requirements do
-  let(:convox_cli_version) { '20210208170413' }
+  let(:convox_cli_version) { '3.3.4' }
 
   before do
     allow_any_instance_of(
@@ -45,8 +45,8 @@ RSpec.describe ConvoxInstaller::Requirements do
       end
     end
 
-    context 'with Convox CLI version 3.3.4' do
-      let(:convox_cli_version) { '3.3.4' }
+    context 'with Convox CLI version 20210208170413' do
+      let(:convox_cli_version) { '20210208170413' }
 
       it 'shows the correct error message and quit' do
         req = described_class.new
@@ -55,11 +55,10 @@ RSpec.describe ConvoxInstaller::Requirements do
         expect(req).to receive(:quit!)
 
         expect(req.logger).to receive(:error).with(
-          'This script requires Convox CLI version 2.x.x. Your Convox CLI version is: 3.3.4'
+          'This script requires Convox CLI version 3.x.x. Your Convox CLI version is: 20210208170413'
         )
         expect(req.logger).to receive(:error).with(
-          'Please follow the instructions here to downgrade your ' \
-          'Convox CLI version: https://docsv2.convox.com/introduction/installation'
+          "Please run 'brew update convox' or follow the instructions at https://docs.convox.com/getting-started/introduction"
         )
 
         req.ensure_requirements!

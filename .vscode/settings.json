@@ -1,4 +1,5 @@
 {
-  "editor.formatOnSave": false,
-  "editor.formatOnSaveTimeout": 5000
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveTimeout": 5000,
+  "ruby.rubocop.executePath": "/usr/local/bin/rubocop-daemon-wrapper/"
 }
