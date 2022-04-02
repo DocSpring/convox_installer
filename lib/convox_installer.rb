@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require "active_support"
-require "active_support/core_ext"
-require "convox_installer/config"
-require "convox_installer/requirements"
-require "convox"
+require 'active_support'
+require 'active_support/core_ext'
+require 'convox_installer/config'
+require 'convox_installer/requirements'
+require 'convox'
 
 module ConvoxInstaller
   def client
@@ -12,7 +12,7 @@ module ConvoxInstaller
   end
 
   def config
-    options = {log_level: @log_level}
+    options = { log_level: @log_level }
     options[:prompts] = @prompts if @prompts
     @config ||= Config.new(options)
   end
@@ -32,7 +32,7 @@ module ConvoxInstaller
   %w[
     backup_convox_host_and_rack
     install_convox
-    validate_convox_auth_and_set_host!
+    validate_convox_auth_and_write_host!
     validate_convox_rack!
     convox_rack_data
     create_convox_app!

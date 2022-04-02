@@ -149,7 +149,7 @@ If there are any existing files at `~/.convox/host` or `~/.convox/rack`, this me
 
 Runs `convox rack install ...`. Has some validations to ensure that all required settings are present.
 
-#### `validate_convox_auth_and_set_host!`
+#### `validate_convox_auth_and_write_host!`
 
 After running `install_convox`, call this method to ensure that the the `~/.convox/auth` file has been updated with the correct details (checks the rack name and AWS region.) Then it sets the rack host in `~/.convox/host` (if not already set.)
 

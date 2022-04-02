@@ -1,5 +1,12 @@
 require: rubocop-rspec
-TargetRubyVersion: "2.3"
+
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 2.5
+
+Style/MixinUsage:
+  Exclude:
+    - examples/**/*
 
 Metrics/LineLength:
   Max: 100
@@ -39,3 +46,18 @@ Metrics/BlockLength:
 
 Metrics/BlockNesting:
   Max: 7
+
+RSpec/MessageSpies:
+  Enabled: false
+
+RSpec/StubbedMock:
+  Enabled: false
+
+RSpec/MultipleExpectations:
+  Enabled: false
+
+RSpec/ExampleLength:
+  Enabled: false
+
+RSpec/AnyInstance:
+  Enabled: false

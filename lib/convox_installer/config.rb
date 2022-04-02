@@ -1,48 +1,48 @@
 # frozen_string_literal: true
 
-require "highline"
-require "fileutils"
-require "json"
-require "securerandom"
+require 'highline'
+require 'fileutils'
+require 'json'
+require 'securerandom'
 
 module ConvoxInstaller
   class Config
-    CONFIG_FILE = File.expand_path("./.installer_config.json").freeze
+    CONFIG_FILE = File.expand_path('./.installer_config.json').freeze
 
     attr_accessor :logger, :config, :prompts, :highline
 
     DEFAULT_PROMPTS = [
       {
         key: :stack_name,
-        title: "Convox Stack Name",
-        prompt: "Please enter a name for your Convox installation",
-        default: "convox",
+        title: 'Convox Stack Name',
+        prompt: 'Please enter a name for your Convox installation',
+        default: 'convox'
       },
       {
         key: :aws_region,
-        title: "AWS Region",
-        default: "us-east-1",
+        title: 'AWS Region',
+        default: 'us-east-1'
       },
       {
         key: :instance_type,
-        title: "EC2 Instance Type",
-        default: "t3.medium",
+        title: 'EC2 Instance Type',
+        default: 't3.medium'
       },
       {
-        section: "Admin AWS Credentials",
+        section: 'Admin AWS Credentials'
       },
       {
         key: :aws_access_key_id,
-        title: "AWS Access Key ID",
+        title: 'AWS Access Key ID'
       },
       {
         key: :aws_secret_access_key,
-        title: "AWS Secret Access Key",
-      },
+        title: 'AWS Secret Access Key'
+      }
     ].freeze
 
     def initialize(options = {})
-      @logger = Logger.new(STDOUT)
+      @logger = Logger.new($stdout)
       logger.level = options[:log_level] || Logger::INFO
 
       self.prompts = options[:prompts] || DEFAULT_PROMPTS
@@ -74,13 +74,14 @@ module ConvoxInstaller
 
         @completed_prompt = true
 
-        highline.say "Please double check all of these configuration details."
+        highline.say 'Please double check all of these configuration details.'
 
         agree = highline.agree(
-          "Would you like to start the Convox installation?" \
+          'Would you like to start the Convox installation?' \
           " (press 'n' to correct any settings)"
         )
         break if agree
+
         highline.say "\n"
       end
 
@@ -89,7 +90,7 @@ module ConvoxInstaller
 
     def show_config_summary
       highline.say "\n============================================"
-      highline.say "                 SUMMARY"
+      highline.say '                 SUMMARY'
       highline.say "============================================\n\n"
 
       config_titles = prompts.map do |prompt|
@@ -106,8 +107,16 @@ module ConvoxInstaller
         highline.say "    #{padded_key} #{value}"
       end
       highline.say "\nWe've saved your configuration to: #{CONFIG_FILE}"
-      highline.say "If anything goes wrong during the installation, " \
+      highline.say 'If anything goes wrong during the installation, ' \
                    "you can restart the script to reload the config and continue.\n\n"
+    end
+
+    def self.config_file_exists?
+      File.exist?(CONFIG_FILE)
+    end
+
+    def self.read_config_file
+      File.read(CONFIG_FILE)
     end
 
     private
@@ -130,10 +139,10 @@ module ConvoxInstaller
 
         default = prompt[:value]
         config[key] = if default.is_a?(Proc)
-          default.arity == 0 ? default.call : default.call(config)
-        else
-          default
-        end
+                        default.arity.zero? ? default.call : default.call(config)
+                      else
+                        default
+                      end
         save_config_to_file
         return
       end
@@ -157,7 +166,7 @@ module ConvoxInstaller
 
       logger.debug "Loading saved config from #{CONFIG_FILE}..."
 
-      loaded_config = JSON.parse(Config.read_config_file)["config"].symbolize_keys
+      loaded_config = JSON.parse(Config.read_config_file)['config'].symbolize_keys
       self.config = config.merge(loaded_config)
     end
 
@@ -177,14 +186,6 @@ module ConvoxInstaller
       File.open(CONFIG_FILE, 'w') do |f|
         f.puts(JSON.pretty_generate(config: config))
       end
-    end
-
-    def self.config_file_exists?
-      File.exist?(CONFIG_FILE)
-    end
-
-    def self.read_config_file
-      File.read(CONFIG_FILE)
     end
   end
 end
