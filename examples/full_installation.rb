@@ -94,7 +94,7 @@ backup_convox_host_and_rack
 install_convox
 
 validate_convox_auth_and_write_host!
-validate_convox_rack!
+validate_convox_rack_api!
 
 create_convox_app!
 set_default_app_for_directory!
@@ -129,7 +129,7 @@ env_command_params = env.map { |k, v| "#{k}=\"#{v}\"" }.join(' ')
 run_convox_command! "env set #{env_command_params}"
 
 puts '=> Initial deploy...'
-puts '-----> Documentation: https://docs.convox.com/deployment/builds'
+puts '-----> Documentation: https://docs.convox.com/deployment/deploying-changes/'
 run_convox_command! 'deploy --wait'
 
 puts '=> Setting up the database...'

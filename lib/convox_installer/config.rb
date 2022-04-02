@@ -76,6 +76,8 @@ module ConvoxInstaller
 
         highline.say 'Please double check all of these configuration details.'
 
+        break if ENV['AUTOSTART_CONVOX_INSTALLATION']
+
         agree = highline.agree(
           'Would you like to start the Convox installation?' \
           " (press 'n' to correct any settings)"

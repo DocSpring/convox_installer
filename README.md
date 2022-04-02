@@ -161,9 +161,13 @@ If any config settings are missing, it prompts the user for input. Finally, it s
 
 Runs `convox rack install ...`. Has some validations to ensure that all required settings are present.
 
-#### `validate_convox_rack!`
+#### `validate_convox_rack_and_write_current!`
 
-Calls `convox api get /system` to get the Rack details, then makes sure that everything is correct.
+Ensures that the local machine contains a directory for the rack's terraform config, and sets the current rack for Convox CLI commands.
+
+#### `validate_convox_rack_api!`
+
+Makes an API request (`convox api get /system`) to get the rack details, and makes sure that everything is correct.
 
 #### `convox_rack_data`
 

@@ -5,6 +5,7 @@ require 'json'
 require 'fileutils'
 require 'rubygems'
 require 'os'
+require 'convox/aws/client'
 
 module Convox
   class Client
@@ -18,7 +19,7 @@ module Convox
     AUTH_FILE = File.join(CONVOX_CONFIG_DIR, 'auth')
     CURRENT_FILE = File.join(CONVOX_CONFIG_DIR, 'current')
 
-    attr_accessor :logger, :config
+    attr_accessor :logger, :config, :aws_client
 
     def cli_version_string
       return @cli_version_string if @cli_version_string
@@ -62,6 +63,7 @@ module Convox
       @logger = Logger.new($stdout)
       logger.level = options[:log_level] || Logger::INFO
       @config = options[:config] || {}
+      @aws_client = Convox::AWS::Client.new(logger: logger, config: config)
     end
 
     def backup_convox_host_and_rack
@@ -140,56 +142,42 @@ module Convox
       false
     end
 
-    def validate_convox_auth_and_write_current!
+    # Auth for a detached rack is not saved in the auth file anymore.
+    # It can be found in the terraform state:
+    # ~/Library/Preferences/convox/racks/ds-enterprise-cx3/terraform.tfstate
+    # Under outputs/api/value. The API URL contains the convox username and API token as basic auth.
+    def validate_convox_rack_and_write_current!
       require_config(%i[aws_region stack_name])
 
-      unless File.exist?(AUTH_FILE)
-        raise "Could not find auth file at #{AUTH_FILE}!"
+      unless rack_already_installed?
+        rack_dir = File.join(CONVOX_CONFIG_DIR, 'racks', stack_name)
+        raise "Could not find rack terraform directory at: #{rack_dir}"
       end
 
-      region = config.fetch(:aws_region)
-      stack = config.fetch(:stack_name)
-
-      match_count = 0
-      matching_host = nil
-      auth.each do |host, _password|
-        if host.match?(/^#{stack}-\d+\.#{region}\.elb\.amazonaws\.com$/)
-          matching_host = host
-          match_count += 1
-        end
-      end
-
-      if match_count == 1
-        write_current(matching_host)
-        return matching_host
-      end
-
-      error_message = if match_count > 1
-                        'Found multiple matching hosts for '
-                      else
-                        'Could not find matching authentication for '
-                      end
-      error_message += "region: #{region}, stack: #{stack}"
-      raise error_message
+      # Tells the Convox CLI to use our terraform stack
+      stack_name = config.fetch(:stack_name)
+      write_current(stack_name)
+      stack_name
     end
 
-    def write_current(name)
-      logger.debug "Setting convox host to #{host} (in #{CURRENT_FILE})..."
-      current_hash = { name: name, type: 'terraform' }
+    def write_current(rack_name)
+      logger.debug "Setting convox rack to #{rack_name} (in #{CURRENT_FILE})..."
+      current_hash = { name: rack_name, type: 'terraform' }
       File.open(CURRENT_FILE, 'w') { |f| f.puts current_hash.to_json }
     end
 
-    def validate_convox_rack!
+    def validate_convox_rack_api!
       require_config(%i[
                        aws_region
                        stack_name
                        instance_type
                      ])
       logger.debug 'Validating that convox rack has the correct attributes...'
+      # Convox 3 racks no longer return info about region or type. (These are blank strings.)
       {
         provider: 'aws',
-        region: config.fetch(:aws_region),
-        type: config.fetch(:instance_type),
+        # region: config.fetch(:aws_region),
+        # type: config.fetch(:instance_type),
         name: config.fetch(:stack_name)
       }.each do |k, v|
         convox_value = convox_rack_data[k.to_s]
@@ -205,7 +193,9 @@ module Convox
     def convox_rack_data
       @convox_rack_data ||= begin
         logger.debug 'Fetching convox rack attributes...'
-        convox_output = `convox api get /system`
+        command = 'convox api get /system'
+        logger.debug "+ #{command}"
+        convox_output = `#{command}`
         raise 'convox command failed!' unless $CHILD_STATUS.success?
 
         JSON.parse(convox_output)
@@ -220,9 +210,10 @@ module Convox
 
       logger.info "Creating app: #{app_name}..."
       logger.info '=> Documentation: ' \
-                  'https://docs.convox.com/deployment/creating-an-application'
+                  'https://docs.convox.com/reference/cli/apps/'
 
-      run_convox_command! "apps create #{app_name} --wait"
+      # NOTE: --wait flags were removed in Convox 3. It now waits by default.
+      run_convox_command! "apps create #{app_name}"
 
       retries = 0
       loop do
@@ -268,20 +259,18 @@ module Convox
     end
 
     # Create the s3 bucket, and also apply a CORS configuration
+    # Convox v3 update - They removed support for S3 resources, so we have to do
+    # it with the AWS CLI.
     def create_s3_bucket!
       require_config(%i[s3_bucket_name])
+
       bucket_name = config.fetch(:s3_bucket_name)
-      if s3_bucket_exists?
-        logger.info "#{bucket_name} S3 bucket already exists!"
-      else
-        logger.info "Creating S3 bucket resource (#{bucket_name})..."
-        run_convox_command! 'rack resources create s3 ' \
-                            "--name \"#{bucket_name}\" " \
-                            '--wait'
+      unless aws_client.s3_bucket_exists?(bucket_name)
+        aws_client.create_s3_bucket!(bucket_name, check_if_exists: false)
 
         retries = 0
         loop do
-          break if s3_bucket_exists?
+          break if aws_client.s3_bucket_exists?(bucket_name)
 
           if retries > 10
             raise "Something went wrong while creating the #{bucket_name} S3 bucket! " \
@@ -296,14 +285,6 @@ module Convox
       end
 
       set_s3_bucket_cors_policy
-    end
-
-    def s3_bucket_exists?
-      require_config(%i[s3_bucket_name])
-      bucket_name = config.fetch(:s3_bucket_name)
-      logger.debug "Looking up S3 bucket resource: #{bucket_name}"
-      `convox api get /resources/#{bucket_name} 2>/dev/null`
-      $CHILD_STATUS.success?
     end
 
     def s3_bucket_details
@@ -412,7 +393,7 @@ module Convox
 
       logger.info "Adding Docker Registry: #{registry_url}..."
       logger.info '=> Documentation: ' \
-                  'https://docs.convox.com/deployment/private-registries'
+                  'https://docs.convox.com/configuration/private-registries/'
 
       `convox registries add "#{registry_url}" \
         "#{config.fetch(:docker_registry_username)}" \
