@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    convox_installer (1.0.9)
+    convox_installer (2.0.0)
       activesupport (>= 5.2.3)
       highline (>= 1.7.10)
       httparty (>= 0.17.0)
