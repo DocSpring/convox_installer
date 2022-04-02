@@ -1,12 +1,22 @@
 # Convox Installer
 
-A Ruby gem that makes it easier to build a Convox installation script. This is like Chef/Ansible/Terraform for your initial Convox setup.
+A Ruby gem that makes it easier to build a Convox installation script. The main purpose of this gem is to make it easier to set up on-premise installations of your app for enterprise users.
 
-# Requirements: Convox >= 3
+This gem provides a DSL so that you can write a script that walks your users through setting up Convox and getting your app and running, setting up S3 buckets, etc.
 
-This version of `convox_installer` is only designed to work with Convox 3 and later. Please install the Convox v3 CLI by following the instructions here: https://docs.convox.com/getting-started/introduction/
+## Requirements
 
-*If you want to set up a Convox v2 rack (deprecated), the last version of `convox_installer` that supports the v2 CLI is `1.0.9`. (Take a look at [the `convox2` branch](https://github.com/DocSpring/convox_installer/tree/convox2).)*
+- MacOS
+- Convox v3 CLI
+- Runtime integration installed in your AWS account. See: https://docs.convox.com/getting-started/introduction/
+
+_Please let us know if you need to run this script on Linux. Linux support should not be too difficult to implement, but unfortunately we probably won't be able to support Windows._
+
+### Requires Convox >= 3
+
+This version of `convox_installer` is only designed to work with Convox 3 and later. You can run `convox version` to check your version. Please install the Convox v3 CLI by following the instructions here: https://docs.convox.com/getting-started/introduction/
+
+_If you want to set up a Convox v2 rack (deprecated), the last version of `convox_installer` that supports the v2 CLI is `1.0.9`. (Take a look at [the `convox2` branch](https://github.com/DocSpring/convox_installer/tree/convox2).)_
 
 ## USE AT YOUR OWN RISK! THIS CODE IS PROVIDED WITHOUT ANY WARRANTIES OR GUARANTEES
 
@@ -28,7 +38,7 @@ We have successfully set up a number of test and production deployments using th
 
 `convox_installer` is a Ruby gem that makes it much easier to build an installation script for `convox/rack` (the open source PaaS). The Convox CLI is awesome, but it's missing a nice way to script a full deployment. I originally wrote a bash script that made API calls and used [`jq`](https://stedolan.github.io/jq/) and `sed`, but this was very error-prone and it did not have good cross-platform support.
 
-I've rewritten this installation script in Ruby, which provides very good cross-platform support, and also allows me to write tests.
+I've written this installation script in Ruby, which provides very good cross-platform support, and also allows me to write tests.
 
 ## Usage
 
@@ -40,7 +50,7 @@ require 'bundler/inline'
 
 gemfile do
   source 'https://rubygems.org'
-  gem 'convox_installer'
+  gem 'convox_installer', '3.0.0'
 end
 
 require "convox_installer"
@@ -144,20 +154,12 @@ Makes sure that the `convox` and `aws` CLI tools are installed on this system. I
 Loads config from ENV vars, or from saved config at `./.installer_config.json`.
 If any config settings are missing, it prompts the user for input. Finally, it shows a summary of the config, and asks the user if they want to proceed with the installation. If the user enters `y` (or `yes`), the `prompt_for_config` method completes. If they enter `n` (or `no`), we loop over every setting and let them press "enter" to keep the current value, or provide a new value to correct any mistakes.
 
-#### `backup_convox_host_and_rack`
-
-If there are any existing files at `~/.convox/host` or `~/.convox/rack`, this method moves these to `~/.convox/host.bak` and `~/.convox/rack.bak`.
-
 #### `install_convox`
 
 - **Required Config:** `aws_region`, `aws_access_key_id`, `aws_secret_access_key`,
   `stack_name`, `instance_type`
 
 Runs `convox rack install ...`. Has some validations to ensure that all required settings are present.
-
-#### `validate_convox_auth_and_write_host!`
-
-After running `install_convox`, call this method to ensure that the the `~/.convox/auth` file has been updated with the correct details (checks the rack name and AWS region.) Then it sets the rack host in `~/.convox/host` (if not already set.)
 
 #### `validate_convox_rack!`
 

@@ -44,6 +44,7 @@ module ConvoxInstaller
     default_service_domain_name
     run_convox_command!
     logger
+    rack_already_installed?
   ].each do |method|
     define_method(method) do |*args|
       client.send(method, *args)

@@ -34,6 +34,14 @@ module ConvoxInstaller
         }
       end
 
+      unless command_present? 'terraform'
+        @missing_packages << {
+          name: 'terraform',
+          brew: 'terraform',
+          docs: 'https://learn.hashicorp.com/tutorials/terraform/install-cli'
+        }
+      end
+
       if @missing_packages.any?
         logger.error 'This script requires the convox and AWS CLI tools.'
         if OS.mac?
@@ -49,7 +57,10 @@ module ConvoxInstaller
       end
 
       client = Convox::Client.new
-      return if client.convox_3_cli?
+      if client.convox_3_cli?
+        logger.debug "=> Convox CLI is version 3.x.x (#{client.cli_version_string})"
+        return
+      end
 
       logger.error 'This script requires Convox CLI version 3.x.x. ' \
                    "Your Convox CLI version is: #{client.cli_version_string}"

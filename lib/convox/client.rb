@@ -4,12 +4,19 @@ require 'logger'
 require 'json'
 require 'fileutils'
 require 'rubygems'
+require 'os'
 
 module Convox
   class Client
-    CONVOX_DIR = File.expand_path('~/.convox').freeze
-    AUTH_FILE = File.join(CONVOX_DIR, 'auth')
-    HOST_FILE = File.join(CONVOX_DIR, 'host')
+    CONVOX_CONFIG_DIR = if OS.mac?
+                          # Convox v3 moved this to ~/Library/Preferences/convox/ on Mac
+                          File.expand_path('~/Library/Preferences/convox').freeze
+                        else
+                          File.expand_path('~/.convox').freeze
+                        end
+
+    AUTH_FILE = File.join(CONVOX_CONFIG_DIR, 'auth')
+    CURRENT_FILE = File.join(CONVOX_CONFIG_DIR, 'current')
 
     attr_accessor :logger, :config
 
@@ -58,16 +65,14 @@ module Convox
     end
 
     def backup_convox_host_and_rack
-      FileUtils.mkdir_p CONVOX_DIR
+      FileUtils.mkdir_p CONVOX_CONFIG_DIR
 
-      %w[host rack].each do |f|
-        path = File.join(CONVOX_DIR, f)
-        next unless File.exist?(path)
+      path = File.join(CONVOX_CONFIG_DIR, 'current')
+      return unless File.exist?(path)
 
-        bak_file = "#{path}.bak"
-        logger.info "Moving existing #{path} to #{bak_file}..."
-        FileUtils.mv(path, bak_file)
-      end
+      bak_file = "#{path}.bak"
+      logger.info "Moving existing #{path} to #{bak_file}..."
+      FileUtils.mv(path, bak_file)
     end
 
     def install_convox
@@ -76,8 +81,13 @@ module Convox
       stack_name = config.fetch(:stack_name)
 
       if rack_already_installed?
-        logger.info "There is already a Convox stack named #{stack_name} " \
-                    "in the #{region} AWS region. Using this rack. "
+        logger.info "There is already a Convox rack named #{stack_name}. Using this rack."
+        rack_dir = File.join(CONVOX_CONFIG_DIR, 'racks', stack_name)
+        logger.debug 'If you need to start over, you can run: ' \
+                     "convox rack uninstall #{stack_name}    " \
+                     '(Make sure you export AWS_ACCESS_KEY_ID and ' \
+                     "AWS_SECRET_ACCESS_KEY first.)\n" \
+                     "If this fails, you can try deleting the rack directory: rm -rf #{rack_dir}"
         return true
       end
 
@@ -97,9 +107,17 @@ module Convox
         'AWS_SECRET_ACCESS_KEY' => config.fetch(:aws_secret_access_key)
       }
       command = %(rack install aws \
---name "#{config.fetch(:stack_name)}" \
-"InstanceType=#{config.fetch(:instance_type)}" \
-"BuildInstance=")
+"#{config.fetch(:stack_name)}" \
+"node_type=#{config.fetch(:instance_type)}" \
+"region=#{config.fetch(:aws_region)}")
+      # us-east constantly has problems with the us-east-1c AZ:
+      # "Cannot create cluster 'ds-enterprise-cx3' because us-east-1c, the targeted
+      # availability zone, does not currently have sufficient capacity to support the cluster.
+      # Retry and choose from these availability zones:
+      # us-east-1a, us-east-1b, us-east-1d, us-east-1e, us-east-1f
+      if config.fetch(:aws_region) == 'us-east-1'
+        command += ' "availability_zones=us-east-1a,us-east-1b,us-east-1d,us-east-1e,us-east-1f"'
+      end
 
       run_convox_command!(command, env)
     end
@@ -109,18 +127,20 @@ module Convox
 
       return unless File.exist?(AUTH_FILE)
 
-      region = config.fetch(:aws_region)
+      # region = config.fetch(:aws_region)
       stack_name = config.fetch(:stack_name)
 
-      auth.each do |host, _password|
-        if host.match?(/^#{stack_name}-\d+\.#{region}\.elb\.amazonaws\.com$/)
-          return true
-        end
+      # Convox v3 creates a folder for each rack for the Terraform config
+      rack_dir = File.join(CONVOX_CONFIG_DIR, 'racks', stack_name)
+      return true if File.exist?(rack_dir)
+
+      auth.each do |rack_name, _password|
+        return true if rack_name == stack_name
       end
       false
     end
 
-    def validate_convox_auth_and_write_host!
+    def validate_convox_auth_and_write_current!
       require_config(%i[aws_region stack_name])
 
       unless File.exist?(AUTH_FILE)
@@ -140,7 +160,7 @@ module Convox
       end
 
       if match_count == 1
-        write_host(matching_host)
+        write_current(matching_host)
         return matching_host
       end
 
@@ -153,9 +173,10 @@ module Convox
       raise error_message
     end
 
-    def write_host(host)
-      logger.debug "Setting convox host to #{host} (in #{HOST_FILE})..."
-      File.open(HOST_FILE, 'w') { |f| f.puts host }
+    def write_current(name)
+      logger.debug "Setting convox host to #{host} (in #{CURRENT_FILE})..."
+      current_hash = { name: name, type: 'terraform' }
+      File.open(CURRENT_FILE, 'w') { |f| f.puts current_hash.to_json }
     end
 
     def validate_convox_rack!
@@ -421,6 +442,7 @@ module Convox
 
     def run_convox_command!(cmd, env = {})
       command = "convox #{cmd}"
+      logger.debug "+ #{command}"
       system env, command
       raise "Error running: #{command}" unless $CHILD_STATUS.success?
     end

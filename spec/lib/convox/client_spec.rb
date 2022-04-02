@@ -138,7 +138,7 @@ RSpec.describe Convox::Client do
           stack_name: 'convox-test'
         }
       )
-      expect(client).to receive(:write_host).with(
+      expect(client).to receive(:write_current).with(
         'convox-test-697645520.us-west-2.elb.amazonaws.com'
       )
       expect(client.validate_convox_auth_and_write_host!).to(
