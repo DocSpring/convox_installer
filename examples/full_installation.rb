@@ -20,18 +20,15 @@ include ConvoxInstaller
 MINIMAL_HEALTH_CHECK_PATH = '/health/site'
 COMPLETE_HEALTH_CHECK_PATH = '/health'
 
-S3_BUCKET_CORS_POLICY = <<~JSON
-  {
-    "CORSRules": [
-      {
-        "AllowedOrigins": ["*"],
-        "AllowedHeaders": ["Authorization", "cache-control", "x-requested-with"],
-        "AllowedMethods": ["PUT", "POST", "GET"],
-        "MaxAgeSeconds": 3000
-      }
-    ]
+S3_BUCKET_CORS_RULE = <<-TERRAFORM
+  cors_rule {
+    allowed_headers = ["Authorization", "cache-control", "x-requested-with"]
+    allowed_methods = ["PUT", "POST", "GET"]
+    allowed_origins = ["*"]
+    expose_headers  = []
+    max_age_seconds = 3000
   }
-JSON
+TERRAFORM
 
 @prompts = ConvoxInstaller::Config::DEFAULT_PROMPTS + [
   {
@@ -81,8 +78,8 @@ JSON
     value: -> { "app-uploads-#{SecureRandom.hex(4)}" }
   },
   {
-    key: :s3_bucket_cors_policy,
-    value: S3_BUCKET_CORS_POLICY,
+    key: :s3_bucket_cors_rule,
+    value: S3_BUCKET_CORS_RULE,
     hidden: true
   }
 ]

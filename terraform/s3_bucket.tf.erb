@@ -1,0 +1,67 @@
+# AWS provider version is 3.33.0
+# https://registry.terraform.io/providers/hashicorp/aws/3.33.0
+
+provider "aws" {
+  region  = "us-east-1"
+}
+
+resource "aws_kms_key" "docs_kms_key" {
+  description             = "This key is used to encrypt objects in the DocSpring S3 bucket"
+  deletion_window_in_days = 14
+}
+
+# Later versions of aws provider (e.g. 4.8.0) use separate resources for 
+# aws_s3_bucket_acl and aws_s3_bucket_cors_configuration.
+# This will need to be updated in the future.
+resource "aws_s3_bucket" "docs_s3_bucket" {
+  bucket = "<%= config.fetch(:s3_bucket_name) %>"
+  acl   = "private"
+
+  versioning {
+    enabled = false
+  }
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        kms_master_key_id = aws_kms_key.docs_kms_key.arn
+        sse_algorithm     = "aws:kms"
+      }
+    }
+  }
+
+  <%= config[:s3_bucket_cors_rule] %>
+}
+
+resource "aws_iam_user" "docspring_user" {
+  name = "<%= config.fetch(:stack_name) %>-<%= config.fetch(:s3_bucket_name) %>"
+}
+
+resource "aws_iam_access_key" "docspring_user_access_key" {
+  user = aws_iam_user.docspring_user.name
+}
+
+resource "aws_iam_user_policy" "docspring_user_s3_policy" {
+  name = "docspring_user_s3_policy"
+  user = aws_iam_user.docspring_user.name
+
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "VisualEditor0",
+        "Effect" : "Allow",
+        "Action" : [
+            "s3:PutObject",
+            "s3:PutObjectAcl",
+            "s3:GetObject",
+            "s3:GetObjectAcl",
+            "s3:DeleteObject"
+        ],
+        "Resource" : [
+          "arn:aws:s3:::<%= config.fetch(:s3_bucket_name) %>/*",
+        ]
+      }
+    ]
+  })
+}

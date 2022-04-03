@@ -183,9 +183,14 @@ Checks if the app already exists. If not, calls `convox apps create ... --wait` 
 
 Writes the app name into `./.convox/app` (in the current directory.) The `convox` CLI reads this file, so you don't need to specify the `--app` flag for future commands.
 
-#### `create_s3_bucket!`
+#### `add_s3_bucket!`
 
 - **Required Config:** `s3_bucket_name`
+
+**Method parameters**
+
+- `apply: boolean`
+  - Call `add_s3_bucket!(apply: false)` to skip the call to `terraform apply`. (Just add the terraform config.) Useful if you are setting up multiple resources and just want to run `terraform apply` once (via `apply_terraform_update!`)
 
 Creates an S3 bucket from the `:s3_bucket_name` config setting. This is not a default setting, so you can add something like this to your custom `@prompts`:
 
@@ -199,40 +204,46 @@ Creates an S3 bucket from the `:s3_bucket_name` config setting. This is not a de
 
 The `:value` `Proc` will generate a bucket name with a random suffix. (Avoids conflicts when you are setting up multiple deployments for your app.)
 
-`create_s3_bucket!` will also call `set_s3_bucket_cors_policy` automatically, so you don't need to call this manually.
+You can also set a CORS policy for your S3 bucket. (`:s3_bucket_name`)
+We set the `cors_rule` option for the `aws_s3_bucket` resource in the Terraform configuration. Example:
 
-#### `set_s3_bucket_cors_policy`
+```
+   cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "POST"]
+    allowed_origins = ["https://s3-website-test.hashicorp.com"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+```
 
-- **Required Config:** `s3_bucket_name`
+See: https://registry.terraform.io/providers/hashicorp/aws/3.33.0/docs/resources/s3_bucket#using-cors
 
-Set up a CORS policy for your S3 bucket. (`:s3_bucket_name`)
+_Note: If the `:s3_bucket_cors_rule` setting is not provided, then it is skipped._
 
-_Note: If the `:s3_bucket_cors_policy` setting is not provided, then this method does nothing._
-
-You should set `:s3_bucket_cors_policy` to a JSON string. Here's how I set this up in my own `install.rb` script:
+Here's how we set up a CORS policy in our own `install.rb` script:
 
 ```ruby
-S3_BUCKET_CORS_POLICY = <<-JSON
-{
-  "CORSRules": [
-    {
-      "AllowedOrigins": ["*"],
-      "AllowedHeaders": ["Authorization", "cache-control", "x-requested-with"],
-      "AllowedMethods": ["PUT", "POST", "GET"],
-      "MaxAgeSeconds": 3000
-    }
-  ]
-}
-JSON
+xxxxc = <<-TERRAFORM
+  cors_rule {
+    allowed_headers = ["Authorization", "cache-control", "x-requested-with"]
+    allowed_methods = ["PUT", "POST", "GET"]
+    allowed_origins = ["*"]
+    expose_headers  = []
+    max_age_seconds = 3000
+  }
+TERRAFORM
 
 @prompts = [
   {
-    key: :s3_bucket_cors_policy,
-    value: S3_BUCKET_CORS_POLICY,
+    key: :s3_bucket_cors_rule,
+    value: S3_BUCKET_CORS_RULE,
     hidden: true,
   }
 ]
 ```
+
+#### `apply_terraform_update!`
 
 #### `s3_bucket_details`
 

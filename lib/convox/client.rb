@@ -5,7 +5,7 @@ require 'json'
 require 'fileutils'
 require 'rubygems'
 require 'os'
-require 'convox/aws/client'
+require 'erb'
 
 module Convox
   class Client
@@ -19,7 +19,7 @@ module Convox
     AUTH_FILE = File.join(CONVOX_CONFIG_DIR, 'auth')
     CURRENT_FILE = File.join(CONVOX_CONFIG_DIR, 'current')
 
-    attr_accessor :logger, :config, :aws_client
+    attr_accessor :logger, :config
 
     def cli_version_string
       return @cli_version_string if @cli_version_string
@@ -63,7 +63,12 @@ module Convox
       @logger = Logger.new($stdout)
       logger.level = options[:log_level] || Logger::INFO
       @config = options[:config] || {}
-      @aws_client = Convox::AWS::Client.new(logger: logger, config: config)
+    end
+
+    # Convox v3 creates a folder for each rack for the Terraform config
+    def rack_dir
+      stack_name = config.fetch(:stack_name)
+      File.join(CONVOX_CONFIG_DIR, 'racks', stack_name)
     end
 
     def backup_convox_host_and_rack
@@ -84,7 +89,6 @@ module Convox
 
       if rack_already_installed?
         logger.info "There is already a Convox rack named #{stack_name}. Using this rack."
-        rack_dir = File.join(CONVOX_CONFIG_DIR, 'racks', stack_name)
         logger.debug 'If you need to start over, you can run: ' \
                      "convox rack uninstall #{stack_name}    " \
                      '(Make sure you export AWS_ACCESS_KEY_ID and ' \
@@ -131,9 +135,6 @@ module Convox
 
       # region = config.fetch(:aws_region)
       stack_name = config.fetch(:stack_name)
-
-      # Convox v3 creates a folder for each rack for the Terraform config
-      rack_dir = File.join(CONVOX_CONFIG_DIR, 'racks', stack_name)
       return true if File.exist?(rack_dir)
 
       auth.each do |rack_name, _password|
@@ -150,7 +151,6 @@ module Convox
       require_config(%i[aws_region stack_name])
 
       unless rack_already_installed?
-        rack_dir = File.join(CONVOX_CONFIG_DIR, 'racks', stack_name)
         raise "Could not find rack terraform directory at: #{rack_dir}"
       end
 
@@ -260,31 +260,40 @@ module Convox
 
     # Create the s3 bucket, and also apply a CORS configuration
     # Convox v3 update - They removed support for S3 resources, so we have to do
-    # it with the AWS CLI.
-    def create_s3_bucket!
+    # in terraform now (which is actually pretty nice!)
+    def add_s3_bucket!(apply: true)
       require_config(%i[s3_bucket_name])
 
-      bucket_name = config.fetch(:s3_bucket_name)
-      unless aws_client.s3_bucket_exists?(bucket_name)
-        aws_client.create_s3_bucket!(bucket_name, check_if_exists: false)
-
-        retries = 0
-        loop do
-          break if aws_client.s3_bucket_exists?(bucket_name)
-
-          if retries > 10
-            raise "Something went wrong while creating the #{bucket_name} S3 bucket! " \
-                  '(Please wait a few moments and then restart the installation script.)'
-          end
-          logger.debug 'Waiting for S3 bucket to be ready...'
-          sleep 3
-          retries += 1
-        end
-
-        logger.debug '=> S3 bucket created!'
+      unless config.key? :s3_bucket_cors_rule
+        logger.debug 'No CORS rule provided in config: s3_bucket_cors_rule   (optional)'
+        return
       end
 
-      set_s3_bucket_cors_policy
+      tf_template_path = File.join(__dir__, '../../terraform/s3_bucket.tf.erb')
+      tf_template = ERB.new(File.read(tf_template_path))
+      tf_template_output = tf_template.result(binding)
+
+      # Write to s3_bucket.tf in rack_dir
+      tf_file_path = File.join(rack_dir, 's3_bucket.tf')
+      File.open(tf_file_path, 'w') { |f| f.puts tf_template_output }
+
+      apply_terraform_update! if apply
+    end
+
+    def apply_terraform_update!
+      logger.info 'Applying terraform update...'
+      command = 'terraform apply -auto-approve'
+      # command = 'terraform plan'
+      logger.debug "+ #{command}"
+
+      env = {
+        'AWS_ACCESS_KEY_ID' => config.fetch(:aws_access_key_id),
+        'AWS_SECRET_ACCESS_KEY' => config.fetch(:aws_secret_access_key)
+      }
+      Dir.chdir(rack_dir) do
+        system env, command
+        raise 'terraform command failed!' unless $CHILD_STATUS.success?
+      end
     end
 
     def s3_bucket_details
@@ -312,64 +321,6 @@ module Convox
           secret_access_key: matches[:secret_access_key],
           name: matches[:bucket_name]
         }
-      end
-    end
-
-    def set_s3_bucket_cors_policy
-      require_config(%i[aws_access_key_id aws_secret_access_key])
-      access_key_id = config.fetch(:aws_access_key_id)
-      secret_access_key = config.fetch(:aws_secret_access_key)
-
-      unless config.key? :s3_bucket_cors_policy
-        logger.debug 'No CORS policy provided in config: s3_bucket_cors_policy'
-        return
-      end
-      cors_policy_string = config.fetch(:s3_bucket_cors_policy)
-
-      bucket_name = s3_bucket_details[:name]
-
-      logger.debug "Looking up existing CORS policy for #{bucket_name}"
-      existing_cors_policy_string =
-        `AWS_ACCESS_KEY_ID=#{access_key_id} \
-        AWS_SECRET_ACCESS_KEY=#{secret_access_key} \
-        aws s3api get-bucket-cors --bucket #{bucket_name} 2>/dev/null`
-      if $CHILD_STATUS.success? && existing_cors_policy_string.present?
-        # Sort all the nested arrays so that the equality operator works
-        existing_cors_policy = JSON.parse(existing_cors_policy_string)
-        cors_policy_json = JSON.parse(cors_policy_string)
-        [existing_cors_policy, cors_policy_json].each do |policy_json|
-          next unless policy_json.is_a?(Hash) && policy_json['CORSRules']
-
-          policy_json['CORSRules'].each do |rule|
-            rule['AllowedHeaders']&.sort!
-            rule['AllowedMethods']&.sort!
-            rule['AllowedOrigins']&.sort!
-          end
-        end
-
-        if existing_cors_policy == cors_policy_json
-          logger.debug "=> CORS policy is already up to date for #{bucket_name}."
-          return
-        end
-      end
-
-      begin
-        logger.info "Setting CORS policy for #{bucket_name}..."
-
-        File.open('cors-policy.json', 'w') { |f| f.puts cors_policy_string }
-
-        `AWS_ACCESS_KEY_ID=#{access_key_id} \
-        AWS_SECRET_ACCESS_KEY=#{secret_access_key} \
-          aws s3api put-bucket-cors \
-          --bucket #{bucket_name} \
-          --cors-configuration "file://cors-policy.json"`
-        unless $CHILD_STATUS.success?
-          raise 'Something went wrong while setting the S3 bucket CORS policy!'
-        end
-
-        logger.info "=> Successfully set CORS policy for #{bucket_name}."
-      ensure
-        FileUtils.rm_f 'cors-policy.json'
       end
     end
 

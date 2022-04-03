@@ -37,8 +37,7 @@ module ConvoxInstaller
     convox_rack_data
     create_convox_app!
     set_default_app_for_directory!
-    create_s3_bucket!
-    set_s3_bucket_cors_policy
+    add_s3_bucket!
     s3_bucket_details
     add_docker_registry!
     default_service_domain_name
