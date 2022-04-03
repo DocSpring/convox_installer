@@ -1,0 +1,46 @@
+resource "aws_elasticache_cluster" "elasticache_cluster" {
+  cluster_id           = "<%= config.fetch(:stack_name) %>-elasticache-<%= config.fetch(:random_id) %>"
+  engine               = "<%= config[:elasticache_engine] || 'redis' %>"
+  engine_version       = "<%= config[:elasticache_engine_version] || '6.x' %>"
+  node_type            = "<%= config[:elasticache_node_type] || 'cache.m3.medium' %>"
+  num_cache_nodes      = <%= config[:elasticache_num_cache_nodes] || 1 %>
+  port                 = <%= config[:elasticache_port] || 6379 %>
+  
+  subnet_group_name = aws_elasticache_subnet_group.elasticache_subnet_group.name
+  security_group_ids = [aws_security_group.elasticache_security_group.id]
+
+  # Workaround for weird engine_version issue where 6.x works for creation, and fails for update
+  # See: https://github.com/hashicorp/terraform-provider-aws/issues/15625#issuecomment-727759811
+  # Fixed in version 3.38.0 of the Terraform AWS provider.
+  lifecycle {
+    ignore_changes = [engine_version]
+  }
+}
+
+resource "aws_elasticache_subnet_group" "elasticache_subnet_group" {
+  name       = "<%= config.fetch(:stack_name) %>-elasticache-cluster-subnetgroup-<%= config.fetch(:random_id) %>"
+  subnet_ids = module.system.cluster.subnets
+}
+
+resource "aws_security_group" "elasticache_security_group" {
+  name = "<%= config.fetch(:stack_name) %>-elasticache-securitygroup-<%= config.fetch(:random_id) %>"
+
+  description = "Elasticache Security Group (Managed by Terraform)"
+  vpc_id      = module.system.cluster.vpc
+
+  # Only Redis in
+  ingress {
+    from_port   = 6379
+    to_port     = 6379
+    protocol    = "tcp"
+    cidr_blocks = ["10.1.0.0/16"]
+  }
+
+  # Allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}

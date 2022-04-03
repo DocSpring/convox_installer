@@ -81,6 +81,16 @@ TERRAFORM
     key: :s3_bucket_cors_rule,
     value: S3_BUCKET_CORS_RULE,
     hidden: true
+  },
+  {
+    key: :database_username,
+    value: 'example_app',
+    hidden: true
+  },
+  {
+    key: :database_password,
+    value: -> { SecureRandom.hex(16) },
+    hidden: true
   }
 ]
 

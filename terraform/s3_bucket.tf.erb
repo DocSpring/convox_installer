@@ -14,7 +14,7 @@ resource "aws_kms_key" "docs_kms_key" {
 # aws_s3_bucket_acl and aws_s3_bucket_cors_configuration.
 # This will need to be updated in the future.
 resource "aws_s3_bucket" "docs_s3_bucket" {
-  bucket = "<%= config.fetch(:s3_bucket_name) %>"
+  bucket = "<%= config.fetch(:stack_name) %>-<%= config.fetch(:s3_bucket_name) %>"
   acl   = "private"
 
   versioning {
@@ -33,34 +33,44 @@ resource "aws_s3_bucket" "docs_s3_bucket" {
   <%= config[:s3_bucket_cors_rule] %>
 }
 
-resource "aws_iam_user" "docspring_user" {
+resource "aws_iam_user" "docspring_s3_user" {
   name = "<%= config.fetch(:stack_name) %>-<%= config.fetch(:s3_bucket_name) %>"
 }
 
 resource "aws_iam_access_key" "docspring_user_access_key" {
-  user = aws_iam_user.docspring_user.name
+  user = aws_iam_user.docspring_s3_user.name
 }
 
 resource "aws_iam_user_policy" "docspring_user_s3_policy" {
   name = "docspring_user_s3_policy"
-  user = aws_iam_user.docspring_user.name
+  user = aws_iam_user.docspring_s3_user.name
 
   policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
+    "Version": "2012-10-17",
+    "Statement": [
       {
-        "Sid" : "VisualEditor0",
-        "Effect" : "Allow",
-        "Action" : [
+        "Effect": "Allow",
+        "Action": [
             "s3:PutObject",
             "s3:PutObjectAcl",
             "s3:GetObject",
             "s3:GetObjectAcl",
             "s3:DeleteObject"
         ],
-        "Resource" : [
-          "arn:aws:s3:::<%= config.fetch(:s3_bucket_name) %>/*",
+        "Resource": [
+          "arn:aws:s3:::<%= config.fetch(:stack_name) %>-<%= config.fetch(:s3_bucket_name) %>/*",
         ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ],
+        "Resource": "*"
       }
     ]
   })

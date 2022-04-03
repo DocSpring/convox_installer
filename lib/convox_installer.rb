@@ -37,8 +37,14 @@ module ConvoxInstaller
     convox_rack_data
     create_convox_app!
     set_default_app_for_directory!
-    add_s3_bucket!
+    add_s3_bucket
+    add_rds_database
+    add_elasticache_cluster
+    apply_terraform_update!
+    terraform_state
     s3_bucket_details
+    elasticache_details
+    rds_details
     add_docker_registry!
     default_service_domain_name
     run_convox_command!

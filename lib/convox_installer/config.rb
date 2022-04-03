@@ -38,6 +38,12 @@ module ConvoxInstaller
       {
         key: :aws_secret_access_key,
         title: 'AWS Secret Access Key'
+      },
+      # Short random ID used to ensure that resources are always unique
+      {
+        key: :random_id,
+        value: -> { SecureRandom.hex(4) },
+        hidden: true
       }
     ].freeze
 

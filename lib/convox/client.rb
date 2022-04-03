@@ -193,7 +193,7 @@ module Convox
     def convox_rack_data
       @convox_rack_data ||= begin
         logger.debug 'Fetching convox rack attributes...'
-        command = 'convox api get /system'
+        command = "convox api get /system --rack #{config.fetch(:stack_name)}"
         logger.debug "+ #{command}"
         convox_output = `#{command}`
         raise 'convox command failed!' unless $CHILD_STATUS.success?
@@ -244,7 +244,7 @@ module Convox
       app_name = config.fetch(:convox_app_name)
 
       logger.debug "Looking for existing #{app_name} app..."
-      convox_output = `convox api get /apps`
+      convox_output = `convox api get /apps --rack #{config.fetch(:stack_name)}`
       raise 'convox command failed!' unless $CHILD_STATUS.success?
 
       apps = JSON.parse(convox_output)
@@ -261,7 +261,7 @@ module Convox
     # Create the s3 bucket, and also apply a CORS configuration
     # Convox v3 update - They removed support for S3 resources, so we have to do
     # in terraform now (which is actually pretty nice!)
-    def add_s3_bucket!(apply: true)
+    def add_s3_bucket
       require_config(%i[s3_bucket_name])
 
       unless config.key? :s3_bucket_cors_rule
@@ -269,21 +269,39 @@ module Convox
         return
       end
 
-      tf_template_path = File.join(__dir__, '../../terraform/s3_bucket.tf.erb')
-      tf_template = ERB.new(File.read(tf_template_path))
-      tf_template_output = tf_template.result(binding)
+      write_terraform_template('s3_bucket')
+    end
 
-      # Write to s3_bucket.tf in rack_dir
-      tf_file_path = File.join(rack_dir, 's3_bucket.tf')
-      File.open(tf_file_path, 'w') { |f| f.puts tf_template_output }
+    def add_rds_database
+      require_config(%i[database_username database_password])
+      write_terraform_template('rds')
+    end
 
-      apply_terraform_update! if apply
+    def add_elasticache_cluster
+      write_terraform_template('elasticache')
+    end
+
+    def write_terraform_template(name)
+      template_path = File.join(__dir__, "../../terraform/#{name}.tf.erb")
+      unless File.exist?(template_path)
+        raise "Could not find terraform template at: #{template_path}"
+      end
+
+      template = ERB.new(File.read(template_path))
+      template_output = template.result(binding)
+
+      tf_file_path = File.join(rack_dir, "#{name}.tf")
+      logger.debug "Writing terraform config to #{tf_file_path}..."
+      File.open(tf_file_path, 'w') { |f| f.puts template_output }
     end
 
     def apply_terraform_update!
       logger.info 'Applying terraform update...'
-      command = 'terraform apply -auto-approve'
-      # command = 'terraform plan'
+      command = if ENV['DEBUG_TERRAFORM']
+                  'terraform plan'
+                else
+                  'terraform apply -auto-approve'
+                end
       logger.debug "+ #{command}"
 
       env = {
@@ -296,32 +314,62 @@ module Convox
       end
     end
 
+    def terraform_state
+      tf_state_file = File.join(rack_dir, 'terraform.tfstate')
+      JSON.parse(File.read(tf_state_file))
+    end
+
+    def terraform_resource(resource_type, resource_name)
+      resource = terraform_state['resources'].find do |resource|
+        resource['type'] == resource_type && resource['name'] == resource_name
+      end
+      return resource if resource
+
+      raise "Could not find #{resource_type} resource named #{resource_name} in terraform state!"
+    end
+
     def s3_bucket_details
       require_config(%i[s3_bucket_name])
-      @s3_bucket_details ||= begin
-        bucket_name = config.fetch(:s3_bucket_name)
-        logger.debug "Fetching S3 bucket resource details for #{bucket_name}..."
 
-        response = `convox api get /resources/#{bucket_name}`
-        raise 'convox command failed!' unless $CHILD_STATUS.success?
+      s3_bucket = terraform_resource('aws_s3_bucket', 'docs_s3_bucket')
+      bucket_attributes = s3_bucket['instances'][0]['attributes']
+      access_key = terraform_resource('aws_iam_access_key', 'docspring_user_access_key')
+      key_attributes = access_key['instances'][0]['attributes']
 
-        bucket_data = JSON.parse(response)
-        s3_url = bucket_data['url']
-        matches = s3_url.match(
-          %r{^s3://(?<access_key_id>[^:]*):(?<secret_access_key>[^@]*)@(?<bucket_name>.*)$}
-        )
+      {
+        access_key_id: key_attributes['id'],
+        secret_access_key: key_attributes['secret'],
+        name: bucket_attributes['bucket']
+      }
+    end
 
-        match_keys = %i[access_key_id secret_access_key bucket_name]
-        unless matches && match_keys.all? { |k| matches[k].present? }
-          raise "#{s3_url} is an invalid S3 URL!"
-        end
+    def rds_details
+      require_config(%i[database_username database_password])
 
-        {
-          access_key_id: matches[:access_key_id],
-          secret_access_key: matches[:secret_access_key],
-          name: matches[:bucket_name]
-        }
-      end
+      database = terraform_resource('aws_db_instance', 'rds_database')
+      database_attributes = database['instances'][0]['attributes']
+
+      username = database_attributes['username']
+      password = database_attributes['password']
+      endpoint = database_attributes['endpoint']
+      postgres_url = "postgres://#{username}:#{password}@#{endpoint}/app"
+      {
+        postgres_url: postgres_url
+      }
+    end
+
+    def elasticache_details
+      require_config(%i[s3_bucket_name])
+
+      # Just ensure that the bucket exists in the state
+      cluster = terraform_resource('aws_elasticache_cluster', 'elasticache_cluster')
+      cluster_attributes = cluster['instances'][0]['attributes']
+      cache_node = cluster_attributes['cache_nodes'][0]
+      redis_url = "redis://#{cache_node['address']}:#{cache_node['port']}/0"
+
+      {
+        redis_url: redis_url
+      }
     end
 
     def add_docker_registry!
@@ -330,7 +378,7 @@ module Convox
       registry_url = config.fetch(:docker_registry_url)
 
       logger.debug 'Looking up existing Docker registries...'
-      registries_response = `convox api get /registries`
+      registries_response = `convox api get /registries --rack #{config.fetch(:stack_name)}`
       unless $CHILD_STATUS.success?
         raise 'Something went wrong while fetching the list of registries!'
       end
@@ -348,32 +396,29 @@ module Convox
 
       `convox registries add "#{registry_url}" \
         "#{config.fetch(:docker_registry_username)}" \
-        "#{config.fetch(:docker_registry_password)}"`
+        "#{config.fetch(:docker_registry_password)}" \
+        --rack #{config.fetch(:stack_name)}`
       return if $CHILD_STATUS.success?
 
       raise "Something went wrong while adding the #{registry_url} registry!"
     end
 
     def default_service_domain_name
-      require_config(%i[convox_app_name default_service])
+      require_config(%i[convox_app_name])
 
-      @default_service_domain_name ||= begin
-        convox_domain = convox_rack_data['domain']
-        elb_name_and_region = convox_domain[/([^.]*\.[^.]*)\..*/, 1]
-        unless elb_name_and_region.present?
-          raise 'Something went wrong while parsing the ELB name and region! ' \
-                "(#{elb_name_and_region})"
-        end
-        app = config.fetch(:convox_app_name)
-        service = config.fetch(:default_service)
+      app_name = config.fetch(:convox_app_name)
+      default_service = config[:default_service] || 'web'
 
-        # Need to return downcase host so that `config.hosts` works with Rails applications
-        "#{app}-#{service}.#{elb_name_and_region}.convox.site".downcase
-      end
+      convox_api_url = terraform_state['outputs']['api']['value']
+      convox_router_host = convox_api_url.split('@').last.sub(/^api\./, '')
+
+      [default_service, app_name, convox_router_host].join('.').downcase
     end
 
     def run_convox_command!(cmd, env = {})
-      command = "convox #{cmd}"
+      # Always include the rack as an argument, to
+      # make sure that 'convox switch' doesn't affect any commands
+      command = "convox #{cmd} --rack #{config.fetch(:stack_name)}"
       logger.debug "+ #{command}"
       system env, command
       raise "Error running: #{command}" unless $CHILD_STATUS.success?

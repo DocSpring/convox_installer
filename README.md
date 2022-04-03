@@ -183,14 +183,13 @@ Checks if the app already exists. If not, calls `convox apps create ... --wait` 
 
 Writes the app name into `./.convox/app` (in the current directory.) The `convox` CLI reads this file, so you don't need to specify the `--app` flag for future commands.
 
-#### `add_s3_bucket!`
+#### `add_s3_bucket`
+
+Adds an S3 bucket to your Terraform config.
 
 - **Required Config:** `s3_bucket_name`
 
-**Method parameters**
-
-- `apply: boolean`
-  - Call `add_s3_bucket!(apply: false)` to skip the call to `terraform apply`. (Just add the terraform config.) Useful if you are setting up multiple resources and just want to run `terraform apply` once (via `apply_terraform_update!`)
+NOTE: This method just writes a new Terraform configuration file. You must run `apply_terraform_update!` to apply the changes and create the S3 bucket.
 
 Creates an S3 bucket from the `:s3_bucket_name` config setting. This is not a default setting, so you can add something like this to your custom `@prompts`:
 
@@ -243,7 +242,57 @@ TERRAFORM
 ]
 ```
 
+#### `add_rds_database`
+
+Adds an RDS database to your Terraform config.
+
+- **Required Config:**
+  - `database_username`
+  - `database_password`
+- **Optional Config:**
+  - `database_allocated_storage` _(default: 30)_
+  - `database_engine` _(default: 'postgres')_
+  - `database_engine_version` _(default: '14.2')_
+  - `database_instance_class` _(default: 'db.t3.medium')_
+  - `database_multi_az` _(default: true)_
+
+#### `add_add_elasticache_cluster`
+
+Adds an Elasticache cluster to your Terraform config.
+
+- **Optional Config:**
+  - `engine` _(default: 'redis')_
+  - `engine_version` _(default: '6.2.5')_
+  - `node_type` _(default: 'cache.m3.medium')_
+  - `database_instance_class` _(default: 'db.t3.medium')_
+  - `num_cache_nodes` _(default: 1)_
+  - `port` _(default: 6379)_
+
+_IMPORTANT: Make sure you specify a full version string (e.g. `6.2.5`), and not a partial version (e.g. `6.2`.) A partial version will cause Terraform to delete and recreate the cluster on every run._
+
 #### `apply_terraform_update!`
+
+Runs `terraform apply -auto-approve` to apply any changes to your Terraform configuration (add new resources, etc.)
+
+#### `rds_details`
+
+Returns information about the created RDS database resource.
+
+```ruby
+{
+  postgres_url: "Full URL for the RDS database (including auth)",
+}
+```
+
+#### `elasticache_details`
+
+Returns information about the created RDS database resource.
+
+```ruby
+{
+  redis_url: "Full URL for the Redis cluster",
+}
+```
 
 #### `s3_bucket_details`
 
@@ -269,13 +318,14 @@ Checks the list of registries to see if `docker_registry_url` has already been a
 
 #### `default_service_domain_name`
 
-- **Required Config:** `convox_app_name`, `default_service`
+- **Required Config:** `convox_app_name`
+- **Optional Config:** `default_service`
 
-Parses the rack router ELB name and region, and returns the default `convox.site` domain for your default service. (You can visit this URL in the browser to access your app.)
+Finds the default `*.convox.cloud` URL for the web service. (You can visit this URL in the browser to access your app.)
 
-Example: `myapp-web.rackname-route-abcdfe123456-123456789.us-west-2.convox.site`
+Example: `web.docspring.dc6bae48c2e36366.convox.cloud`
 
-Set a default service in your config prompts (e.g. `web`):
+You can override the default service name in your config (e.g. `web`):
 
 ```ruby
 @prompts = [

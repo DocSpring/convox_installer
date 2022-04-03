@@ -1,0 +1,45 @@
+resource "aws_db_instance" "rds_database" {
+  allocated_storage    = <%= config[:database_allocated_storage] || 30 %>
+  engine               = "<%= config[:database_engine] || 'postgres' %>"
+  engine_version       = "<%= config[:database_engine_version] || '14.2' %>"
+  instance_class       = "<%= config[:database_instance_class] || 'db.t3.medium' %>"
+  name                 = "<%= config.fetch(:stack_name).gsub('-', '_') %>_database"
+  identifier           = "<%= config.fetch(:stack_name) %>-rds-<%= config.fetch(:random_id) %>"
+  multi_az             = <%= config[:database_multi_az] || true %>
+  username             = "<%= config.fetch(:database_username) %>"
+  password             = "<%= config.fetch(:database_password) %>"
+
+  final_snapshot_identifier = "<%= config.fetch(:stack_name) %>-rds-<%= config.fetch(:random_id) %>-final-snapshot"
+  skip_final_snapshot = false
+
+  db_subnet_group_name = aws_db_subnet_group.rds_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.rds_security_group.id]
+}
+
+resource "aws_db_subnet_group" "rds_subnet_group" {
+  name       = "<%= config.fetch(:stack_name) %>-rds-subnetgroup-<%= config.fetch(:random_id) %>"
+  subnet_ids = module.system.cluster.subnets
+}
+
+resource "aws_security_group" "rds_security_group" {
+  name = "<%= config.fetch(:stack_name) %>-rds-database-securitygroup-<%= config.fetch(:random_id) %>"
+
+  description = "RDS Security Group (Managed by Terraform)"
+  vpc_id      = module.system.cluster.vpc
+
+  # Only Postgres in
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["10.1.0.0/16"]
+  }
+
+  # Allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
