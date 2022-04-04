@@ -148,7 +148,7 @@ Shows a heading and optional details.
 
 #### `ensure_requirements!`
 
-Makes sure that the `convox` and `aws` CLI tools are installed on this system. If not, shows installation instructions and exits.
+Makes sure that the `convox` and `terraform` CLI tools are installed on this system. If not, shows installation instructions and exits.
 
 #### `prompt_for_config`
 
@@ -257,19 +257,16 @@ Adds an RDS database to your Terraform config.
   - `database_instance_class` _(default: 'db.t3.medium')_
   - `database_multi_az` _(default: true)_
 
-#### `add_add_elasticache_cluster`
+#### `add_elasticache_cluster`
 
 Adds an Elasticache cluster to your Terraform config.
 
 - **Optional Config:**
   - `engine` _(default: 'redis')_
-  - `engine_version` _(default: '6.2.5')_
-  - `node_type` _(default: 'cache.m3.medium')_
-  - `database_instance_class` _(default: 'db.t3.medium')_
+  - `engine_version` _(default: '6.x')_
+  - `node_type` _(default: 'cache.t3.medium')_
   - `num_cache_nodes` _(default: 1)_
   - `port` _(default: 6379)_
-
-_IMPORTANT: Make sure you specify a full version string (e.g. `6.2.5`), and not a partial version (e.g. `6.2`.) A partial version will cause Terraform to delete and recreate the cluster on every run._
 
 #### `apply_terraform_update!`
 
