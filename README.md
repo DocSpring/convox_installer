@@ -8,7 +8,6 @@ This gem provides a DSL so that you can write a script that walks your users thr
 
 - MacOS
 - Convox v3 CLI
-- Runtime integration installed in your AWS account. See: https://docs.convox.com/getting-started/introduction/
 
 _Please let us know if you need to run this script on Linux. Linux support should not be too difficult to implement, but unfortunately we probably won't be able to support Windows._
 
