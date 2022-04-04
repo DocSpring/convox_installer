@@ -26,10 +26,12 @@ We have successfully set up a number of test and production deployments using th
 - Idempotent. If this script crashes, you can restart it and it will pick up
   where it left off. Every step looks up the existing state, and only makes a change
   if things are not yet set up (or out of sync).
-- Ensures that the `convox` and `aws` CLI tools are installed
+- Ensures that the `convox` and `terraform` CLI tools are installed
 - Wraps the `convox` CLI and parses JSON output from API calls
-- Add n Docker Repository (e.g. ECR registry)
+- Add a Docker Repository (e.g. ECR registry)
 - Set up an S3 bucket with an optional CORS policy
+- Set up an RDS database (Postgres)
+- Set up an Elasticache cluster (Redis)
 
 ## Introduction
 
