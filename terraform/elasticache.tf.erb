@@ -2,7 +2,7 @@ resource "aws_elasticache_cluster" "elasticache_cluster" {
   cluster_id           = "<%= config.fetch(:stack_name) %>-elasticache-<%= config.fetch(:random_id) %>"
   engine               = "<%= config[:elasticache_engine] || 'redis' %>"
   engine_version       = "<%= config[:elasticache_engine_version] || '6.x' %>"
-  node_type            = "<%= config[:elasticache_node_type] || 'cache.m3.medium' %>"
+  node_type            = "<%= config[:elasticache_node_type] || 'cache.t3.medium' %>"
   num_cache_nodes      = <%= config[:elasticache_num_cache_nodes] || 1 %>
   port                 = <%= config[:elasticache_port] || 6379 %>
   

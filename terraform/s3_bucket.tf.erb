@@ -2,7 +2,7 @@
 # https://registry.terraform.io/providers/hashicorp/aws/3.33.0
 
 provider "aws" {
-  region  = "us-east-1"
+  region = "<%= config[:aws_region] %>"
 }
 
 resource "aws_kms_key" "docs_kms_key" {
@@ -16,10 +16,6 @@ resource "aws_kms_key" "docs_kms_key" {
 resource "aws_s3_bucket" "docs_s3_bucket" {
   bucket = "<%= config.fetch(:stack_name) %>-<%= config.fetch(:s3_bucket_name) %>"
   acl   = "private"
-
-  versioning {
-    enabled = false
-  }
 
   server_side_encryption_configuration {
     rule {

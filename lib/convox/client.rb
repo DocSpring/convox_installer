@@ -125,7 +125,7 @@ module Convox
         command += ' "availability_zones=us-east-1a,us-east-1b,us-east-1d,us-east-1e,us-east-1f"'
       end
 
-      run_convox_command!(command, env)
+      run_convox_command!(command, env, rack_arg: false)
     end
 
     def rack_already_installed?
@@ -195,8 +195,20 @@ module Convox
         logger.debug 'Fetching convox rack attributes...'
         command = "convox api get /system --rack #{config.fetch(:stack_name)}"
         logger.debug "+ #{command}"
-        convox_output = `#{command}`
-        raise 'convox command failed!' unless $CHILD_STATUS.success?
+        # It can take a while for the API to be ready.
+        start_time = Time.now
+        convox_output = nil
+        loop do
+          convox_output = `#{command}`
+          break if $CHILD_STATUS.success?
+
+          if Time.now - start_time > 360
+            raise 'Could not connect to Convox rack API!'
+          end
+
+          logger.debug 'Waiting for Convox rack API to be ready... (can take a few minutes)'
+          sleep 5
+        end
 
         JSON.parse(convox_output)
       end
@@ -415,10 +427,13 @@ module Convox
       [default_service, app_name, convox_router_host].join('.').downcase
     end
 
-    def run_convox_command!(cmd, env = {})
+    def run_convox_command!(cmd, env = {}, rack_arg: true)
       # Always include the rack as an argument, to
       # make sure that 'convox switch' doesn't affect any commands
-      command = "convox #{cmd} --rack #{config.fetch(:stack_name)}"
+      command = "convox #{cmd}"
+      if rack_arg
+        command = "#{command} --rack #{config.fetch(:stack_name)}"
+      end
       logger.debug "+ #{command}"
       system env, command
       raise "Error running: #{command}" unless $CHILD_STATUS.success?
