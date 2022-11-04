@@ -99,8 +99,7 @@ config = prompt_for_config
 
 backup_convox_host_and_rack
 install_convox
-
-validate_convox_auth_and_write_host!
+validate_convox_rack_and_write_current!
 validate_convox_rack_api!
 
 create_convox_app!

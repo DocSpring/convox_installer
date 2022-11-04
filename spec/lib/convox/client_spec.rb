@@ -100,11 +100,11 @@ RSpec.describe Convox::Client do
     end
   end
 
-  describe '#validate_convox_auth_and_write_host!' do
+  describe '#validate_convox_rack_and_write_current!' do
     it 'requires the correct config vars' do
       client = described_class.new
       expect do
-        client.validate_convox_auth_and_write_host!
+        client.validate_convox_rack_and_write_current!
       end.to raise_error('aws_region is missing from the config!')
     end
 
@@ -120,7 +120,7 @@ RSpec.describe Convox::Client do
       ).and_return(false)
 
       expect do
-        client.validate_convox_auth_and_write_host!
+        client.validate_convox_rack_and_write_current!
       end.to raise_error(/Could not find auth file at /)
     end
 
@@ -141,7 +141,7 @@ RSpec.describe Convox::Client do
       expect(client).to receive(:write_current).with(
         'convox-test-697645520.us-west-2.elb.amazonaws.com'
       )
-      expect(client.validate_convox_auth_and_write_host!).to(
+      expect(client.validate_convox_rack_and_write_current!).to(
         eq('convox-test-697645520.us-west-2.elb.amazonaws.com')
       )
     end
@@ -161,7 +161,7 @@ RSpec.describe Convox::Client do
         }
       )
       expect do
-        client.validate_convox_auth_and_write_host!
+        client.validate_convox_rack_and_write_current!
       end.to raise_error('Could not find matching authentication for ' \
                          'region: us-east-1, stack: convox-test')
     end
@@ -182,7 +182,7 @@ RSpec.describe Convox::Client do
         }
       )
       expect do
-        client.validate_convox_auth_and_write_host!
+        client.validate_convox_rack_and_write_current!
       end.to raise_error('Found multiple matching hosts for ' \
                          'region: us-west-2, stack: convox-test')
     end
