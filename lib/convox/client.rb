@@ -112,9 +112,11 @@ module Convox
         'AWS_ACCESS_KEY_ID' => config.fetch(:aws_access_key_id),
         'AWS_SECRET_ACCESS_KEY' => config.fetch(:aws_secret_access_key)
       }
+      # Set proxy_protocol=true by default to forward client IPs
       command = %(rack install aws \
 "#{config.fetch(:stack_name)}" \
 "node_type=#{config.fetch(:instance_type)}" \
+"proxy_protocol=true" \
 "region=#{config.fetch(:aws_region)}")
       # us-east constantly has problems with the us-east-1c AZ:
       # "Cannot create cluster 'ds-enterprise-cx3' because us-east-1c, the targeted
