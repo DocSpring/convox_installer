@@ -7,9 +7,9 @@ Gem::Specification.new do |s|
   s.name = 'convox_installer'
   s.version = ConvoxInstaller::VERSION
   s.platform = Gem::Platform::RUBY
-  s.authors = ['Form Applications Inc.']
-  s.email = ['support@formapi.io']
-  s.homepage = 'https://github.com/FormAPI/convox_installer'
+  s.authors = ['DocSpring, Inc.']
+  s.email = ['support@docspring.com']
+  s.homepage = 'https://github.com/DocSpring/convox_installer'
   s.summary = 'Build a Convox installation workflow'
   s.description = 'Build a Convox installation workflow'
   s.license = 'MIT'
