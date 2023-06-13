@@ -253,8 +253,8 @@ Adds an RDS database to your Terraform config.
 - **Optional Config:**
   - `database_allocated_storage` _(default: 30)_
   - `database_engine` _(default: 'postgres')_
-  - `database_engine_version` _(default: '14.2')_
-  - `database_instance_class` _(default: 'db.t3.medium')_
+  - `database_engine_version` _(default: '14.8')_
+  - `database_instance_class` _(default: 'db.t3.small')_
   - `database_multi_az` _(default: true)_
 
 #### `add_elasticache_cluster`

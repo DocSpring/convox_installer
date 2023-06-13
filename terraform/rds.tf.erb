@@ -1,8 +1,8 @@
 resource "aws_db_instance" "rds_database" {
   allocated_storage    = <%= config[:database_allocated_storage] || 30 %>
   engine               = "<%= config[:database_engine] || 'postgres' %>"
-  engine_version       = "<%= config[:database_engine_version] || '14.2' %>"
-  instance_class       = "<%= config[:database_instance_class] || 'db.t3.medium' %>"
+  engine_version       = "<%= config[:database_engine_version] || '14.8' %>"
+  instance_class       = "<%= config[:database_instance_class] || 'db.t3.small' %>"
   name                 = "<%= config.fetch(:stack_name).gsub('-', '_') %>_database"
   identifier           = "<%= config.fetch(:stack_name) %>-rds-<%= config.fetch(:random_id) %>"
   multi_az             = <%= config[:database_multi_az] || true %>
