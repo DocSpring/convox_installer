@@ -5,15 +5,6 @@ require 'convox/client'
 RSpec.describe Convox::Client do
   let(:home_dir) { File.expand_path('~') }
 
-  it 'finds the authentication details in ~/.convox/auth' do
-    expect(File).to receive(:exist?).with("#{home_dir}/.convox/auth").and_return(true)
-    expect(File).to receive(:read).with("#{home_dir}/.convox/auth").and_return(
-      '{ "test.example.com": "1234567890" }'
-    )
-    client = described_class.new
-    expect(client.auth).to eq('test.example.com' => '1234567890')
-  end
-
   describe 'Convox CLI version' do
     let(:client) { described_class.new }
 
@@ -106,85 +97,6 @@ RSpec.describe Convox::Client do
       expect do
         client.validate_convox_rack_and_write_current!
       end.to raise_error('aws_region is missing from the config!')
-    end
-
-    it 'raises an error if auth file is missing' do
-      client = described_class.new(
-        config: {
-          aws_region: 'us-east-1',
-          stack_name: 'asdf'
-        }
-      )
-      expect(File).to receive(:exist?).with(
-        "#{home_dir}/.convox/auth"
-      ).and_return(false)
-
-      expect do
-        client.validate_convox_rack_and_write_current!
-      end.to raise_error(/Could not find auth file at /)
-    end
-
-    it 'sets ~/.convox/host if a matching host is found in the auth file' do
-      expect(File).to receive(:exist?).with(
-        "#{home_dir}/.convox/auth"
-      ).twice.and_return(true)
-
-      expect(File).to receive(:read).with("#{home_dir}/.convox/auth").and_return(
-        '{ "convox-test-697645520.us-west-2.elb.amazonaws.com": "1234567890" }'
-      )
-      client = described_class.new(
-        config: {
-          aws_region: 'us-west-2',
-          stack_name: 'convox-test'
-        }
-      )
-      expect(client).to receive(:write_current).with(
-        'convox-test-697645520.us-west-2.elb.amazonaws.com'
-      )
-      expect(client.validate_convox_rack_and_write_current!).to(
-        eq('convox-test-697645520.us-west-2.elb.amazonaws.com')
-      )
-    end
-
-    it 'raises an error if no matching host is found' do
-      expect(File).to receive(:exist?).with(
-        "#{home_dir}/.convox/auth"
-      ).twice.and_return(true)
-
-      expect(File).to receive(:read).with("#{home_dir}/.convox/auth").and_return(
-        '{ "convox-test-697645520.us-west-2.elb.amazonaws.com": "1234567890" }'
-      )
-      client = described_class.new(
-        config: {
-          aws_region: 'us-east-1',
-          stack_name: 'convox-test'
-        }
-      )
-      expect do
-        client.validate_convox_rack_and_write_current!
-      end.to raise_error('Could not find matching authentication for ' \
-                         'region: us-east-1, stack: convox-test')
-    end
-
-    it 'raises an error if it finds multiple matching hosts' do
-      expect(File).to receive(:exist?).with(
-        "#{home_dir}/.convox/auth"
-      ).twice.and_return(true)
-
-      expect(File).to receive(:read).with("#{home_dir}/.convox/auth").and_return(
-        '{ "convox-test-697645520.us-west-2.elb.amazonaws.com": "1234567890", ' \
-        '"convox-test-1234123412.us-west-2.elb.amazonaws.com": "1234567890" }'
-      )
-      client = described_class.new(
-        config: {
-          aws_region: 'us-west-2',
-          stack_name: 'convox-test'
-        }
-      )
-      expect do
-        client.validate_convox_rack_and_write_current!
-      end.to raise_error('Found multiple matching hosts for ' \
-                         'region: us-west-2, stack: convox-test')
     end
   end
 end

@@ -16,7 +16,6 @@ module Convox
                           File.expand_path('~/.convox').freeze
                         end
 
-    AUTH_FILE = File.join(CONVOX_CONFIG_DIR, 'auth')
     CURRENT_FILE = File.join(CONVOX_CONFIG_DIR, 'current')
 
     attr_accessor :logger, :config
@@ -53,10 +52,6 @@ module Convox
       cli_version = Gem::Version.new(cli_version_string)
       cli_version >= Gem::Version.new('3.0.0') &&
         cli_version < Gem::Version.new('4.0.0')
-    end
-
-    def auth
-      load_auth_from_file
     end
 
     def initialize(options = {})
@@ -132,16 +127,8 @@ module Convox
 
     def rack_already_installed?
       require_config(%i[aws_region stack_name])
-
-      return unless File.exist?(AUTH_FILE)
-
-      # region = config.fetch(:aws_region)
-      stack_name = config.fetch(:stack_name)
       return true if File.exist?(rack_dir)
 
-      auth.each do |rack_name, _password|
-        return true if rack_name == stack_name
-      end
       false
     end
 
@@ -442,16 +429,6 @@ module Convox
     end
 
     private
-
-    def load_auth_from_file
-      return {} unless File.exist?(AUTH_FILE)
-
-      begin
-        JSON.parse(File.read(AUTH_FILE))
-      rescue StandardError
-        {}
-      end
-    end
 
     def require_config(required_keys)
       required_keys.each do |k|
