@@ -3,7 +3,7 @@ resource "aws_db_instance" "rds_database" {
   engine               = "<%= config[:database_engine] || 'postgres' %>"
   engine_version       = "<%= config[:database_engine_version] || '15.7' %>"
   instance_class       = "<%= config[:database_instance_class] || 'db.t3.small' %>"
-  name                 = "<%= config.fetch(:stack_name).gsub('-', '_') %>_database"
+  db_name              = "<%= config.fetch(:stack_name).gsub('-', '_') %>_database"
   identifier           = "<%= config.fetch(:stack_name) %>-rds-<%= config.fetch(:random_id) %>"
   multi_az             = <%= config[:database_multi_az] || true %>
   username             = "<%= config.fetch(:database_username) %>"
