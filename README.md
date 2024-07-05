@@ -253,7 +253,7 @@ Adds an RDS database to your Terraform config.
 - **Optional Config:**
   - `database_allocated_storage` _(default: 30)_
   - `database_engine` _(default: 'postgres')_
-  - `database_engine_version` _(default: '14.8')_
+  - `database_engine_version` _(default: '15.7')_
   - `database_instance_class` _(default: 'db.t3.small')_
   - `database_multi_az` _(default: true)_
 
@@ -263,7 +263,7 @@ Adds an Elasticache cluster to your Terraform config.
 
 - **Optional Config:**
   - `engine` _(default: 'redis')_
-  - `engine_version` _(default: '6.x')_
+  - `engine_version` _(default: '7.1')_
   - `node_type` _(default: 'cache.t3.medium')_
   - `num_cache_nodes` _(default: 1)_
   - `port` _(default: 6379)_
